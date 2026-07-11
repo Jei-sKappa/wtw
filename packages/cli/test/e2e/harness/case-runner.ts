@@ -34,17 +34,25 @@ type ResolveCtx = { projectRoot: string; repoRoot: string };
 export type RunMode = "fast" | "contract";
 
 // The runner owns how each built-in substitution name resolves to a runtime
-// value and which side it applies to: `projectRoot` is injected into copied
-// fixture files (a fixture asserting an absolute path); `wtwCliVersion` is
-// injected into expected output before comparison. A case's `substitute` map
-// only binds author-chosen tokens to these names.
+// value and which side(s) it applies to: `projectRoot` is injected into copied
+// fixture files AND into expected output — the temp project root is
+// machine-dependent, so a case asserting an absolute runtime path (e.g. the
+// exact workspace path the fake Cursor was launched with) must be able to name
+// it on the expected side too. `wtwCliVersion` is injected into expected output
+// only. A case's `substitute` map only binds author-chosen tokens to these names.
 const SUBSTITUTIONS: Record<
   SubstitutionValue,
-  { side: Side; resolve: (ctx: ResolveCtx) => string | Promise<string> }
+  {
+    sides: readonly Side[];
+    resolve: (ctx: ResolveCtx) => string | Promise<string>;
+  }
 > = {
-  projectRoot: { side: "fixture", resolve: (ctx) => ctx.projectRoot },
+  projectRoot: {
+    sides: ["fixture", "expected"],
+    resolve: (ctx) => ctx.projectRoot,
+  },
   wtwCliVersion: {
-    side: "expected",
+    sides: ["expected"],
     resolve: (ctx) => loadPackageVersion(ctx.repoRoot),
   },
 };
@@ -329,10 +337,12 @@ export async function runCase(
     for (const [token, name] of Object.entries(testCase.manifest.substitute)) {
       const spec = SUBSTITUTIONS[name];
       const value = await spec.resolve({ projectRoot, repoRoot });
-      (spec.side === "fixture"
-        ? fixtureReplacements
-        : expectedReplacements
-      ).set(token, value);
+      for (const side of spec.sides) {
+        (side === "fixture" ? fixtureReplacements : expectedReplacements).set(
+          token,
+          value,
+        );
+      }
     }
     if (fixtureReplacements.size > 0) {
       await expandFixturePlaceholders(projectRoot, fixtureReplacements);

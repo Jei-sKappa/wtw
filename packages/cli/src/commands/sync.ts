@@ -13,6 +13,7 @@ import {
   type WorktreeRecord,
   WtwError,
 } from "@wtw/core";
+import { launchCursor } from "../cursor/launch";
 import { atomicWriteFile } from "../fs/atomic-write";
 import { worktreeListPorcelain } from "../git/git";
 import { withRepositoryLock } from "../lock";
@@ -40,8 +41,10 @@ const HOLD_CAP_MS = 15000;
 /** Options controlling a single synchronization run. */
 export interface SyncOptions {
   /**
-   * Whether `--open` was passed. In this task it is a no-op placeholder: all
-   * writes still happen and Cursor is never launched (Task 11 adds the launch).
+   * Whether `--open` was passed. When `true`, Cursor is launched with the
+   * absolute primary workspace path exactly once, strictly after every
+   * synchronization write has succeeded (FR-10). When `false`, no launch ever
+   * happens.
    */
   readonly open: boolean;
 }
@@ -60,7 +63,7 @@ export interface SyncResult {
   readonly linkedUpdated: string[];
   /** Total count of existing linked worktrees considered. */
   readonly linkedTotal: number;
-  /** Echo of the `--open` flag (no launch happens in this task). */
+  /** Echo of the `--open` flag; when set, Cursor was launched after the writes. */
   readonly open: boolean;
 }
 
@@ -136,7 +139,7 @@ export async function runSync(
   context: RepositoryContext,
   options: SyncOptions,
 ): Promise<SyncResult> {
-  return withRepositoryLock(context.gitCommonDir, async () => {
+  const result = await withRepositoryLock(context.gitCommonDir, async () => {
     await honorTestBarrier(context.primaryPath);
 
     if (process.env[FAIL_AFTER_LOCK_ENV]) {
@@ -186,6 +189,17 @@ export async function runSync(
       open: options.open,
     };
   });
+
+  // Launch is gated STRICTLY after every synchronization write has succeeded and
+  // the repository lock has been released. Only `sync --open` launches Cursor,
+  // exactly once, with the absolute primary workspace path. A launch failure
+  // leaves the synchronized files in place (no rollback) and propagates so the
+  // command exits 1 (FR-10). `init`, `check`, and plain `sync` never launch.
+  if (options.open) {
+    await launchCursor(result.workspacePath);
+  }
+
+  return result;
 }
 
 /** Deterministic, human-readable success report for `wtw sync`. */
@@ -200,8 +214,9 @@ export function formatSyncResult(result: SyncResult): string {
 
 /**
  * `wtw sync [--open]` — resolve the repository context and run the internal
- * blocking synchronization. `--open` is accepted but, in this task, performs all
- * writes without launching Cursor (Task 11 adds the launch + ordering).
+ * blocking synchronization. With `--open`, Cursor is launched with the absolute
+ * primary workspace path exactly once, strictly after every write succeeds; a
+ * launch failure preserves the synchronized files and exits 1 (FR-10).
  */
 export function makeSyncCommand() {
   return new Command("sync")

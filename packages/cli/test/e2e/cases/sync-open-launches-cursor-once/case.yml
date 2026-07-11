@@ -1,0 +1,30 @@
+id: sync-open-launches-cursor-once
+covers:
+  - WTW-FR-0010.AC-1002
+title: sync --open launches Cursor exactly once with the absolute workspace path
+description: >
+  real Git, simulated Cursor. After every synchronization write succeeds, `sync
+  --open` launches the fake `cursor` exactly once with the exact ABSOLUTE root
+  workspace path. The fake shim appends one JSON line per invocation; a
+  full-file compare of the invocation log proves EXACTLY ONE entry carrying the
+  exact absolute workspace path (never a GUI is opened).
+cwd: repo
+substitute:
+  __PROJECT_ROOT__: projectRoot
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+command: ["sync", "--open"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized"]
+  stderr: ""
+  files:
+    "repo/.fake-cursor.log": "expected/cursor-invocations.jsonl"

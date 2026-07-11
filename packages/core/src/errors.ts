@@ -23,7 +23,8 @@ export type WtwErrorCode =
   | "git_command_failed"
   | "lock_unavailable"
   | "workspace_invalid"
-  | "sync_failed";
+  | "sync_failed"
+  | "cursor_launch_failed";
 
 /** Structured, serializable context attached to a `WtwError`. */
 export type WtwErrorDetails = Record<
