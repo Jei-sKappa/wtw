@@ -1,0 +1,43 @@
+id: contract-lifecycle
+covers:
+  - WTW-FR-0013.AC-1301
+  - WTW-FR-0013.AC-1302
+  - WTW-FR-0007.AC-0703
+  - WTW-FR-0006.AC-0604
+title: full real-Worktrunk lifecycle against the built wtw
+mode: scenario
+description: >
+  real Git, real Worktrunk v0.62.0, simulated Cursor. The full lifecycle proven
+  by the bespoke scenario test in `contract.test.ts` (run under
+  `bun run test:contract`, skipped when the pinned binary is absent). In order:
+  `wtw init` on a real repository; native Worktrunk first-use approval observed
+  in isolated approval state, which `init` neither grants nor bypasses (the
+  approval store stays empty and a non-`--yes` create refuses for approval);
+  a real `wt switch --create` running the blocking `pre-start` copy so the
+  selected ignored data and BOTH control files exist in the new worktree before
+  the create returns (AC-13.1, AC-07.3), including when the new branch base is a
+  linked-worktree branch whose ignored content diverges from the primary (the
+  primary stays authoritative); the background `post-start` `wtw sync --open`
+  reconciling the workspace, with the fake Cursor recording the exact absolute
+  root-workspace path exactly once and never opening a GUI (AC-13.1); removal
+  invoked from a LINKED worktree via real Worktrunk; and the background
+  `post-remove` `wtw sync` leaving the root workspace without the removed path
+  after the hook completes (AC-13.2). Ordered, background-hook-driven, and
+  bounded-poll assertions cannot be expressed as one command run, so this
+  scenario is verified by the scenario test rather than the generic runner; the
+  first step's observable is `wtw init` reporting initialization.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+command: ["init"]
+expect:
+  exitCode: 0
+  stdoutContains:
+    - "Initialized wtw local automation for this repository."
+  stderr: ""

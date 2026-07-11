@@ -313,10 +313,21 @@ function entrypointArgv(mode: RunMode, repoRoot: string): string[] {
   return ["bun", path.resolve(repoRoot, "src/index.ts")];
 }
 
+/**
+ * Options for a single case run. `extraEnv` is merged into the CLI subprocess
+ * environment after the isolated `HOME` and before the case `env` (so a case can
+ * still override it). Contract-mode runs use it to inject the pinned real
+ * Worktrunk, real Git, the built `wtw`, and the fake Cursor (a prepended bin
+ * directory plus the matching `WTW_*_BIN` overrides) resolved by the contract
+ * suite — machine-dependent absolute paths a checked-in case.yml cannot name.
+ */
+export type RunCaseOptions = { extraEnv?: NodeJS.ProcessEnv };
+
 export async function runCase(
   repoRoot: string,
   testCase: LoadedCase,
   mode: RunMode = "fast",
+  options: RunCaseOptions = {},
 ): Promise<void> {
   const temp = await createTempDir();
   // A second temp dir is the per-case isolated HOME, so the CLI never reads the
@@ -362,6 +373,7 @@ export async function runCase(
     // `__FAKE_GIT_BIN__`) and the runner resolves it to the checked-in shim.
     const env: NodeJS.ProcessEnv = {
       HOME: homeRoot,
+      ...options.extraEnv,
       ...resolveEnv(testCase.manifest.env, repoRoot),
     };
 

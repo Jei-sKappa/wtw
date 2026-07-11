@@ -1,0 +1,33 @@
+id: lifecycle-background-failure-repaired
+covers:
+  - WTW-FR-0013.AC-1303
+title: repair after a failed background post-start sync
+description: >
+  real Git, simulated Worktrunk (the failed background hook is simulated). The
+  background `post-start` `wtw sync` may fail and leave a newly created linked
+  worktree with temporary drift: no canonical control files and no workspace
+  entry. Spec lifecycle behavior makes the repair path an explicit `wtw sync`.
+  Here a linked worktree that never got synced (modelled by a raw `git worktree
+  add`, which runs no hooks) is repaired by an explicit `sync`: it gains the
+  canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace
+  folder entry, with no real binary needed.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "bg-fail", "../wt-bg-fail"] }
+command: ["sync"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized"]
+  stderr: ""
+  files:
+    "wt-bg-fail/.config/wt.toml": "expected/wt.toml"
+    "wt-bg-fail/.worktreeinclude": "expected/worktreeinclude"
+  fileContains:
+    "repo/repo.code-workspace": ["bg-fail"]

@@ -9,6 +9,7 @@ const CASE_FIELDS = new Set([
   "covers",
   "title",
   "description",
+  "mode",
   "cwd",
   "command",
   "substitute",
@@ -16,6 +17,18 @@ const CASE_FIELDS = new Set([
   "setup",
   "expect",
 ]);
+
+// Which labelled suite owns a case and how it is verified. `fast` (the default
+// when omitted) runs through the generic runner in fast mode against the source
+// entrypoint with fake executables; `contract` runs through the generic runner
+// in contract mode against the built artifact and a pinned real Worktrunk;
+// `scenario` is a contract case whose ordered, background-hook-driven proof
+// cannot be expressed as a single-command run — it is verified by a bespoke
+// scenario test and declared here only for traceability and living-doc
+// rendering. The generic runner never executes a `scenario` case.
+export const CASE_MODES = ["fast", "contract", "scenario"] as const;
+export type CaseMode = (typeof CASE_MODES)[number];
+const CASE_MODE_SET: ReadonlySet<string> = new Set(CASE_MODES);
 const SETUP_STEP_FIELDS = new Set(["cli", "cp", "run"]);
 const CP_STEP_FIELDS = new Set(["from", "to"]);
 const RUN_STEP_FIELDS = new Set(["cmd", "background", "allowFailure", "env"]);
@@ -93,6 +106,7 @@ export type CaseManifest = {
   covers: string[];
   title: string;
   description: string;
+  mode?: CaseMode;
   cwd: string;
   command: string[];
   substitute: Record<string, SubstitutionValue>;
@@ -376,6 +390,20 @@ export function validateCaseManifest(
     `${id}.description`,
     source,
   );
+
+  // `mode` is optional; an omitted mode means the default `fast` suite. Only
+  // contract/scenario cases declare it. An unknown value is rejected so the
+  // strict schema never silently mis-routes a case.
+  let mode: CaseMode | undefined;
+  if (value.mode !== undefined) {
+    if (typeof value.mode !== "string" || !CASE_MODE_SET.has(value.mode)) {
+      fail(
+        source,
+        `${id}.mode must be one of ${CASE_MODES.join(", ")}: ${String(value.mode)}`,
+      );
+    }
+    mode = value.mode as CaseMode;
+  }
   // `cwd` is optional: cases run from the project root by default (the 99%
   // scenario a real user is in). The rare case that needs to exercise running
   // from a nested or linked worktree directory can still set it explicitly.
@@ -507,6 +535,7 @@ export function validateCaseManifest(
     covers,
     title,
     description,
+    ...(mode === undefined ? {} : { mode }),
     cwd,
     command,
     substitute,

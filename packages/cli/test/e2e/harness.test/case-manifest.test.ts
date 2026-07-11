@@ -76,6 +76,35 @@ describe("validateCaseManifest", () => {
     expect(manifest.substitute).toEqual({});
   });
 
+  it("accepts a contract/scenario mode and omits it when absent", () => {
+    const contract = validateCaseManifest(
+      { ...validCase, mode: "contract" },
+      { filePath: "test/e2e/cases/contract-worktrunk-compat/case.yml" },
+    );
+    expect(contract.mode).toBe("contract");
+
+    const scenario = validateCaseManifest(
+      { ...validCase, mode: "scenario" },
+      { filePath: "test/e2e/cases/contract-lifecycle/case.yml" },
+    );
+    expect(scenario.mode).toBe("scenario");
+
+    expect(
+      validateCaseManifest(validCase, {
+        filePath: "test/e2e/cases/bare-invocation/case.yml",
+      }).mode,
+    ).toBeUndefined();
+  });
+
+  it("rejects a mode outside the labelled set", () => {
+    expect(() =>
+      validateCaseManifest(
+        { ...validCase, mode: "slow" },
+        { filePath: "test/e2e/cases/bare-invocation/case.yml" },
+      ),
+    ).toThrow(/mode must be one of fast, contract, scenario/);
+  });
+
   it("rejects substitute values outside the built-in set", () => {
     expect(() =>
       validateCaseManifest(

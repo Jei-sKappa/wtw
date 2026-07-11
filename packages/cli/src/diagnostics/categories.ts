@@ -151,9 +151,13 @@ function resolveWtBinary(): string {
 }
 
 /**
- * Spawn `wt --version` (read-only) and return the trimmed version string, or
- * `null` when Worktrunk is absent, exits non-zero, or prints nothing. This is
- * the only Worktrunk invocation `check` makes; it never triggers approval.
+ * Spawn `wt --version` (read-only) and return the resolved Worktrunk version, or
+ * `null` when Worktrunk is absent, exits non-zero, or prints nothing. Real
+ * Worktrunk prints `wt v0.62.0` — a `wt v` prefix wrapping the semver — so the
+ * raw output is scanned for the first `major.minor.patch` token and that clean
+ * token is returned; output that carries no version triple (e.g. `banana`) is
+ * returned verbatim so the pure evaluator reports it as unparseable. This is the
+ * only Worktrunk invocation `check` makes; it never triggers approval.
  */
 async function resolveWorktrunkVersion(binary: string): Promise<string | null> {
   try {
@@ -163,7 +167,9 @@ async function resolveWorktrunkVersion(binary: string): Promise<string | null> {
     });
     if (result.failed || result.exitCode !== 0) return null;
     const out = typeof result.stdout === "string" ? result.stdout.trim() : "";
-    return out.length > 0 ? out : null;
+    if (out.length === 0) return null;
+    const semver = /\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?/.exec(out);
+    return semver === null ? out : semver[0];
   } catch {
     return null;
   }

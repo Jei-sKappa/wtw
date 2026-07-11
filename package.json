@@ -13,6 +13,7 @@
     "format": "biome format --write .",
     "test": "vitest run",
     "test:e2e": "vitest run packages/cli/test/e2e",
+    "test:contract": "bun run build && WTW_CONTRACT=1 vitest run packages/cli/test/e2e/contract.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

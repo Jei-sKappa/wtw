@@ -15,6 +15,16 @@ const repoRoot = path.resolve(import.meta.dirname, "../..");
 // and a failure now names the exact case instead of "the loop timed out".
 const cases = await loadCases(repoRoot);
 
+// Traceability spans EVERY case regardless of mode (contract and scenario cases
+// count toward acceptance-criterion coverage), but the fast suite only EXECUTES
+// fast cases through the generic runner: contract/scenario cases need the built
+// artifact and a pinned real Worktrunk and are run by `contract.test.ts` under
+// the separate `test:contract` gate. Filtering the run loop (not the coverage)
+// keeps this fast gate green without demanding cases it cannot run here.
+const fastCases = cases.filter(
+  (entry) => (entry.manifest.mode ?? "fast") === "fast",
+);
+
 describe("e2e case tree", () => {
   it("has valid requirement traceability", async () => {
     const requirements = await loadRequirements(repoRoot);
@@ -27,7 +37,7 @@ describe("e2e case tree", () => {
   });
 
   it.concurrent.each(
-    cases,
+    fastCases,
   )("runs e2e case $manifest.id through the real CLI (fast mode)", async (testCase) => {
     await runCase(repoRoot, testCase, "fast");
   }, 30_000);

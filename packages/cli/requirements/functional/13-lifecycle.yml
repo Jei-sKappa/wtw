@@ -1,0 +1,33 @@
+- id: WTW-FR-0013
+  title: Lifecycle integration
+  status: active
+  description: >
+    The Worktrunk lifecycle carries `wtw` end to end. The blocking `pre-start`
+    copy makes selected ignored data and both control files part of worktree
+    readiness, so they exist before a successful create command returns. The
+    background `post-start` `wtw sync --open` reconciles the workspace and opens
+    Cursor on the exact absolute root-workspace path. Removal invoked from a
+    linked worktree runs the background `post-remove` `wtw sync`, leaving the
+    root workspace without the removed path. The real-lifecycle proofs
+    (AC-13.1, AC-13.2) are established by the external-contract suite against a
+    pinned real Worktrunk v0.62.0 binary; the repair proofs (AC-13.3) are fast
+    cases that need no real binary, since a hook that never ran (a failed
+    background hook, `--no-hooks`, or a raw `git worktree add`) is repaired by an
+    explicit `wtw check`/`wtw sync`.
+  acceptance:
+    - id: AC-1301
+      statement: >
+        The real Worktrunk scenario proves selected ignored content exists
+        before a successful create command returns, while the fake Cursor
+        records the post-start exact absolute workspace open invocation exactly
+        once. (spec AC-13.1)
+    - id: AC-1302
+      statement: >
+        Removing from a linked worktree through real Worktrunk leaves the root
+        workspace without the removed path after the background post-remove hook
+        completes. (spec AC-13.2)
+    - id: AC-1303
+      statement: >
+        Fast cases demonstrate repair after a simulated failed background hook,
+        after `--no-hooks`, and after raw Git drift, through explicit `wtw check`
+        and `wtw sync`. (spec AC-13.3)

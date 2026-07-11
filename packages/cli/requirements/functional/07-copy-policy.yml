@@ -19,3 +19,9 @@
         `wtw check` FAILs when either required control entry is absent from
         `.worktreeinclude`, and WARNs (rather than FAILs) for a user entry that
         currently matches no ignored content. (spec AC-07.2)
+    - id: AC-0703
+      statement: >
+        The real-contract scenario proves native Worktrunk copies selected
+        ignored data and both control files from the primary before creation
+        readiness, including when the new branch base is a linked-worktree branch
+        whose ignored content diverges from the primary. (spec AC-07.3)
