@@ -6,9 +6,25 @@
 // Placeholder export; real domain surface is introduced by later tasks.
 export const WTW_CORE_PACKAGE = "@wtw/core";
 
+export type {
+  IncludeFinding,
+  IncludeFindingKind,
+  IncludeFindings,
+  IncludeSeverity,
+} from "./copy-policy/entries";
+export {
+  checkIncludeEntries,
+  parseIncludeEntries,
+} from "./copy-policy/entries";
+export {
+  INCLUDE_GUIDANCE_COMMENT,
+  REQUIRED_INCLUDE_ENTRIES,
+  REQUIRED_INCLUDE_WORKTREEINCLUDE,
+  REQUIRED_INCLUDE_WT_TOML,
+  WORKTREEINCLUDE_SCAFFOLD,
+} from "./copy-policy/scaffold";
 export type { WtwErrorCode, WtwErrorDetails } from "./errors";
 export { WtwError } from "./errors";
-
 export type { ManagedBlockScan } from "./exclude/managed-block";
 export {
   findManagedBlock,
