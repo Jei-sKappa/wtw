@@ -1,0 +1,19 @@
+- id: WTW-FR-0015
+  title: Version, build, and local use
+  status: active
+  description: >
+    The CLI reports its identity through `--version`/`-V`. A source or test run
+    prints exactly the CLI package version followed by ` (dev)`; a bundled build
+    prints `<version> (<short-sha>)`.
+  notes: >
+    The build-SHA form (`<version> (<short sha>)`, spec AC-15.2) and the
+    Node-bundle/symlink-install criteria (spec AC-15.3, AC-15.4) are produced
+    only from a bundled build where `WTW_GIT_SHA` is injected. They are not
+    reachable from the source-run fast E2E harness, so they are covered by
+    build-time checks authored in Task 14 (build) and mapped in Task 16, not by
+    a fast E2E case here.
+  acceptance:
+    - id: AC-1501
+      statement: >
+        Source-run `--version` and `-V` print exactly the CLI package version
+        followed by ` (dev)` and exit 0. (spec AC-15.1)

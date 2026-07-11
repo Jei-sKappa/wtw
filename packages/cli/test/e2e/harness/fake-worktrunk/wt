@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+
+// Test-only fake `wt` (Worktrunk) for hermetic, offline e2e coverage of wtw's
+// Worktrunk-dependent paths (real-vs-simulated: this is SIMULATED Worktrunk; its
+// evidence must never be presented as real lifecycle proof — the real contract
+// suite in Task 15 uses a pinned real v0.62.0 binary). A case selects it by
+// pointing an executable-resolution env var at this file via the
+// `__FAKE_WT_BIN__` sentinel the runner rewrites to this file's absolute path.
+//
+// It records every invocation and injects deterministic behavior via env:
+//
+//   wt --version           -> prints FAKE_WT_VERSION (default 0.62.0), exit 0
+//   any other invocation   -> prints FAKE_WT_STDOUT (if set), exit 0, unless
+//                             FAKE_WT_FAIL is set (then exit non-zero after
+//                             writing FAKE_WT_STDERR)
+//
+// Wiring (all via the case's `env:` map):
+//   __FAKE_WT_BIN__   sentinel the runner resolves to this script's abs path
+//   FAKE_WT_VERSION   version string `--version` reports (default 0.62.0)
+//   FAKE_WT_STDOUT    stdout text emitted for a non-`--version` invocation
+//   FAKE_WT_FAIL      when set (non-empty), exit non-zero after writing stderr
+//   FAKE_WT_STDERR    stderr text emitted when FAKE_WT_FAIL is set
+//   FAKE_WT_LOG       absolute path of the invocation log (defaults to
+//                     `<cwd>/.fake-wt.log`)
+//
+// Every invocation appends one JSON line — `{ "argv": [...], "cwd": "..." }` —
+// to the log so a case can assert the exact command wtw ran. This file is ESM.
+
+import { appendFileSync } from "node:fs";
+import path from "node:path";
+
+const argv = process.argv.slice(2);
+
+function recordInvocation() {
+  const logPath =
+    process.env.FAKE_WT_LOG ?? path.join(process.cwd(), ".fake-wt.log");
+  try {
+    appendFileSync(
+      logPath,
+      `${JSON.stringify({ argv, cwd: process.cwd() })}\n`,
+    );
+  } catch {
+    // Recording is best-effort; never let it mask the simulated behavior.
+  }
+}
+
+function main() {
+  recordInvocation();
+
+  if (argv.includes("--version")) {
+    process.stdout.write(`${process.env.FAKE_WT_VERSION ?? "0.62.0"}\n`);
+    process.exit(0);
+  }
+
+  if (process.env.FAKE_WT_FAIL) {
+    process.stderr.write(
+      `${process.env.FAKE_WT_STDERR ?? "error: fake-wt: simulated failure"}\n`,
+    );
+    process.exit(1);
+  }
+
+  const stdout = process.env.FAKE_WT_STDOUT;
+  if (stdout !== undefined && stdout.length > 0) {
+    process.stdout.write(stdout.endsWith("\n") ? stdout : `${stdout}\n`);
+  }
+  process.exit(0);
+}
+
+main();

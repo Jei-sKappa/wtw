@@ -1,0 +1,14 @@
+id: version-dev
+covers:
+  - WTW-FR-0015.AC-1501
+title: Version via --version (dev)
+description: >
+  A source/test run of `wtw --version` prints exactly the CLI package version
+  followed by ` (dev)` to stdout and exits 0.
+command: ["--version"]
+substitute:
+  __VERSION__: wtwCliVersion
+expect:
+  exitCode: 0
+  stdout: "__VERSION__ (dev)\n"
+  stderr: ""

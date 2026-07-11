@@ -1,0 +1,13 @@
+id: bare-invocation
+covers:
+  - WTW-FR-0002.AC-0201
+title: Bare invocation prints root help
+description: >
+  Running `wtw` with no arguments displays the root help. Commander's
+  no-subcommand path writes that help to stderr (not stdout) and exits 0, so the
+  case asserts empty stdout and the full help text on stderr.
+command: []
+expect:
+  exitCode: 0
+  stdout: ""
+  stderrFile: expected/stderr.txt

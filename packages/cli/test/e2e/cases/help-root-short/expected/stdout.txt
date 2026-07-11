@@ -1,0 +1,13 @@
+Usage: wtw [options] [command]
+
+Per-clone setup companion for Worktrunk worktrees
+
+Options:
+  -V, --version   output the version number
+  -h, --help      display help for command
+
+Commands:
+  init            Initialize wtw local automation for this repository
+  sync [options]  Synchronize control files and the workspace across worktrees
+  check           Diagnose wtw configuration drift without making changes
+  help [command]  display help for command

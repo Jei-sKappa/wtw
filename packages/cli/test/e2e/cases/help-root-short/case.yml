@@ -1,0 +1,11 @@
+id: help-root-short
+covers:
+  - WTW-FR-0002.AC-0201
+title: Root help via -h
+description: >
+  `wtw -h` prints the same root help text to stdout and exits 0.
+command: ["-h"]
+expect:
+  exitCode: 0
+  stdoutFile: expected/stdout.txt
+  stderr: ""

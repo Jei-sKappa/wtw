@@ -1,0 +1,12 @@
+id: unexpected-positional
+covers:
+  - WTW-FR-0002.AC-0202
+title: Unexpected positional argument is rejected
+description: >
+  A command that accepts no positional arguments rejects an extra positional,
+  exiting 1 with exactly one `Error: <message>` line on stderr and empty stdout.
+command: ["init", "extra"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: Unexpected argument extra for init.\n"

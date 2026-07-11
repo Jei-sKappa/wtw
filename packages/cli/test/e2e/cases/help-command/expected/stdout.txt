@@ -1,0 +1,6 @@
+Usage: wtw init [options]
+
+Initialize wtw local automation for this repository
+
+Options:
+  -h, --help  display help for command

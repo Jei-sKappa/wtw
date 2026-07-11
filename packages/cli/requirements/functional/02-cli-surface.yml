@@ -1,0 +1,25 @@
+- id: WTW-FR-0002
+  title: CLI surface and error envelope
+  status: active
+  description: >
+    The complete public command surface is `wtw`, `wtw init`, `wtw sync
+    [--open]`, `wtw check`, `wtw help [command]`, `wtw -h|--help`, and `wtw
+    -V|--version`. Help and version paths exit 0; every excluded command,
+    excluded option, and unexpected positional argument exits 1 with exactly one
+    `Error: <message>` line on stderr and empty stdout.
+  acceptance:
+    - id: AC-0201
+      statement: >
+        Bare `wtw`, root help, command help, `-h`, and `--help` print the
+        corresponding help text and exit 0. (spec AC-02.1)
+    - id: AC-0202
+      statement: >
+        Only `init`, `sync [--open]`, and `check` are accepted product commands;
+        every excluded command or option and every unexpected positional
+        argument exits 1 with exactly one `Error: <message>` line on stderr and
+        empty stdout. (spec AC-02.2)
+    - id: AC-0203
+      statement: >
+        `init` and `check` reject every command-specific option and `sync`
+        accepts only `--open`; a rejected option exits 1 with one `Error:` line
+        on stderr and empty stdout. (spec AC-02.3)

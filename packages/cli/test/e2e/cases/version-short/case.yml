@@ -1,0 +1,13 @@
+id: version-short
+covers:
+  - WTW-FR-0015.AC-1501
+title: Version via -V (dev)
+description: >
+  `wtw -V` prints the same `<version> (dev)` string to stdout and exits 0.
+command: ["-V"]
+substitute:
+  __VERSION__: wtwCliVersion
+expect:
+  exitCode: 0
+  stdout: "__VERSION__ (dev)\n"
+  stderr: ""

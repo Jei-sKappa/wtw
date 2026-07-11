@@ -1,0 +1,13 @@
+id: init-unknown-option
+covers:
+  - WTW-FR-0002.AC-0203
+title: init rejects a command-specific option
+description: >
+  `init` accepts no command-specific options; `--open` (valid only on `sync`) is
+  rejected, exiting 1 with one `Error: <message>` line on stderr and empty
+  stdout.
+command: ["init", "--open"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: Unknown init option --open.\n"

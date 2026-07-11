@@ -1,0 +1,11 @@
+id: help-command
+covers:
+  - WTW-FR-0002.AC-0201
+title: Command help via init --help
+description: >
+  `wtw init --help` prints the `init` subcommand help to stdout and exits 0.
+command: ["init", "--help"]
+expect:
+  exitCode: 0
+  stdoutFile: expected/stdout.txt
+  stderr: ""

@@ -1,0 +1,12 @@
+id: unknown-flag
+covers:
+  - WTW-FR-0002.AC-0202
+title: Unknown root flag is rejected
+description: >
+  An unknown root-level flag is not an accepted command, so it exits 1 with
+  exactly one `Error: <message>` line on stderr and empty stdout.
+command: ["--bogus"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: Expected command shape: wtw init, wtw sync [--open], or wtw check (plus --help and --version).\n"

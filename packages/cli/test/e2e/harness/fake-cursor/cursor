@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+
+// Test-only fake `cursor` for hermetic e2e coverage of wtw's `sync --open`
+// launch path (real-vs-simulated: this is SIMULATED Cursor). It NEVER opens a
+// GUI: it only records the workspace path it was asked to open, so automated
+// tests can assert the exact launch invocation without a real editor. The
+// manual release checklist is the only place a supported real Cursor is
+// exercised. A case selects this shim by pointing an executable-resolution env
+// var at it via the `__FAKE_CURSOR_BIN__` sentinel the runner rewrites to this
+// file's absolute path.
+//
+// Behavior:
+//   cursor <workspace-path> [args...]  -> record argv+cwd, exit 0
+//   with FAKE_CURSOR_FAIL set          -> record, then exit non-zero after
+//                                         writing FAKE_CURSOR_STDERR (drives the
+//                                         "launch failed after writes" path)
+//
+// Wiring (all via the case's `env:` map):
+//   __FAKE_CURSOR_BIN__  sentinel the runner resolves to this script's abs path
+//   FAKE_CURSOR_FAIL     when set (non-empty), exit non-zero after recording
+//   FAKE_CURSOR_STDERR   stderr text emitted when FAKE_CURSOR_FAIL is set
+//   FAKE_CURSOR_LOG      absolute path of the invocation log (defaults to
+//                        `<cwd>/.fake-cursor.log`)
+//
+// Every invocation appends one JSON line — `{ "argv": [...], "cwd": "..." }` —
+// to the log; `argv` holds the workspace path wtw asked Cursor to open. This
+// file is ESM. Under no circumstances does it spawn a child process or a GUI.
+
+import { appendFileSync } from "node:fs";
+import path from "node:path";
+
+const argv = process.argv.slice(2);
+
+function recordInvocation() {
+  const logPath =
+    process.env.FAKE_CURSOR_LOG ?? path.join(process.cwd(), ".fake-cursor.log");
+  try {
+    appendFileSync(
+      logPath,
+      `${JSON.stringify({ argv, cwd: process.cwd() })}\n`,
+    );
+  } catch {
+    // Recording is best-effort; never let it mask the simulated behavior.
+  }
+}
+
+function main() {
+  recordInvocation();
+
+  if (process.env.FAKE_CURSOR_FAIL) {
+    process.stderr.write(
+      `${process.env.FAKE_CURSOR_STDERR ?? "fake-cursor: simulated launch failure"}\n`,
+    );
+    process.exit(1);
+  }
+
+  // Success: recording the workspace path is the entire behavior. No GUI.
+  process.exit(0);
+}
+
+main();
