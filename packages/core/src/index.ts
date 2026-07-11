@@ -9,6 +9,14 @@ export const WTW_CORE_PACKAGE = "@wtw/core";
 export type { WtwErrorCode, WtwErrorDetails } from "./errors";
 export { WtwError } from "./errors";
 
+export type { ManagedBlockScan } from "./exclude/managed-block";
+export {
+  findManagedBlock,
+  MANAGED_BLOCK_BEGIN,
+  MANAGED_BLOCK_END,
+  reconcileExcludeBlock,
+} from "./exclude/managed-block";
+
 export type {
   PredicateResult,
   PrimarySupportConjunct,
