@@ -49,7 +49,19 @@ export {
   SHORT_SHA_LENGTH,
   worktreeDisplayName,
 } from "./repo/worktree";
-
+export type {
+  EditFailure,
+  EditFailureReason,
+  EditResult,
+  EditSuccess,
+  FolderEntry,
+  ManagedWorktreeInput,
+} from "./workspace/folders";
+export {
+  applyFoldersEdit,
+  computeManagedFolders,
+  minimalWorkspaceScaffold,
+} from "./workspace/folders";
 export type {
   HookCompatResult,
   HookConflict,
@@ -62,5 +74,6 @@ export {
   renderReservedHooks,
   WT_TOML_SCAFFOLD,
 } from "./worktrunk/scaffold";
+
 export type { VersionFinding, VersionSeverity } from "./worktrunk/version";
 export { evaluateWorktrunkVersion } from "./worktrunk/version";
