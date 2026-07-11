@@ -1,0 +1,8 @@
+# Library for references
+.library/
+
+# Temp files
+temp/
+
+# Thread-local WIP scratch
+docs/threads/**/.wip/
