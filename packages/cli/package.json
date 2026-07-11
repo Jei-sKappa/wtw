@@ -13,6 +13,7 @@
   "dependencies": {
     "@commander-js/extra-typings": "^14",
     "@wtw/core": "workspace:*",
-    "commander": "^14"
+    "commander": "^14",
+    "execa": "^9.6.1"
   }
 }
