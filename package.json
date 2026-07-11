@@ -10,10 +10,13 @@
     "build": "bun run build:cli",
     "build:cli": "cd packages/cli && bun run build",
     "check": "biome check .",
+    "docs:living": "tsx packages/cli/scripts/generate-living-docs.ts",
+    "docs:living:check": "tsx packages/cli/scripts/generate-living-docs.ts --check",
     "format": "biome format --write .",
     "test": "vitest run",
     "test:e2e": "vitest run packages/cli/test/e2e",
     "test:contract": "bun run build && WTW_CONTRACT=1 vitest run packages/cli/test/e2e/contract.test.ts",
+    "test-and-report": "bun run check && bun run typecheck && bun run test && bun run test:e2e && bun run test:contract && bun run docs:living:check && bun run build",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
