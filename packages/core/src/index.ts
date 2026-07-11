@@ -33,3 +33,18 @@ export {
   SHORT_SHA_LENGTH,
   worktreeDisplayName,
 } from "./repo/worktree";
+
+export type {
+  HookCompatResult,
+  HookConflict,
+  HookConflictKind,
+} from "./worktrunk/hooks";
+export { checkReservedHooks } from "./worktrunk/hooks";
+export type { ReservedHook } from "./worktrunk/scaffold";
+export {
+  RESERVED_HOOKS,
+  renderReservedHooks,
+  WT_TOML_SCAFFOLD,
+} from "./worktrunk/scaffold";
+export type { VersionFinding, VersionSeverity } from "./worktrunk/version";
+export { evaluateWorktrunkVersion } from "./worktrunk/version";
