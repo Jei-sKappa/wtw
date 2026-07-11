@@ -1,0 +1,5 @@
+.config/wt.toml
+.worktreeinclude
+notes.txt
+
+# Add other ignored files and directories below.

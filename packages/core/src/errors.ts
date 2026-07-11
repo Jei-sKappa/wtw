@@ -20,7 +20,10 @@ export type WtwErrorCode =
   | "not_implemented"
   | "unsupported_platform"
   | "unsupported_repository"
-  | "git_command_failed";
+  | "git_command_failed"
+  | "lock_unavailable"
+  | "workspace_invalid"
+  | "sync_failed";
 
 /** Structured, serializable context attached to a `WtwError`. */
 export type WtwErrorDetails = Record<

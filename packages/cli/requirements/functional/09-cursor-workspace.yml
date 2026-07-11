@@ -1,0 +1,27 @@
+- id: WTW-FR-0009
+  title: Cursor workspace preservation and reconciliation
+  status: active
+  description: >
+    The root Cursor workspace file (`<primary-directory-name>.code-workspace`)
+    is user-editable JSONC that lives only in the primary worktree and is never
+    selected by `.worktreeinclude`. `wtw` owns only its top-level `folders`
+    property. Synchronization edits only `folders` in valid JSONC, preserving
+    comments, formatting, property order, and every unrelated property; invalid
+    JSONC or a non-object top level fails without writing; and a missing
+    workspace is recreated with the minimal scaffold and the current folders.
+    This file is authoritative for FR-09; the `init`-side criteria (creation,
+    folder-list ordering, and missing/prunable exclusion) are added by Task 12.
+  acceptance:
+    - id: AC-0902
+      statement: >
+        Synchronization modifies only top-level `folders` in valid JSONC and
+        preserves comments, formatting, property order, and all unrelated
+        properties byte-for-byte outside the edit span. (spec AC-09.2)
+    - id: AC-0903
+      statement: >
+        Invalid JSONC (or a non-object top level) causes sync to exit 1 without
+        changing the workspace file. (spec AC-09.3)
+    - id: AC-0906
+      statement: >
+        Plain `sync` recreates a missing workspace with the minimal scaffold and
+        the current managed folders. (spec AC-09.6)

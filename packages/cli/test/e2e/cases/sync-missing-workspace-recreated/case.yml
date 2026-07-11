@@ -1,0 +1,27 @@
+id: sync-missing-workspace-recreated
+covers:
+  - WTW-FR-0009.AC-0906
+title: sync recreates a missing workspace with the minimal scaffold
+description: >
+  real Git, simulated nothing. No workspace file exists in the primary. Plain
+  `sync` recreates the minimal `<primary>.code-workspace` scaffold carrying the
+  current managed folders (primary plus the existing linked worktree).
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+command: ["sync"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized", "created"]
+  stderr: ""
+  fileContains:
+    "repo/repo.code-workspace":
+      - "\"folders\""
+      - "feature-a"

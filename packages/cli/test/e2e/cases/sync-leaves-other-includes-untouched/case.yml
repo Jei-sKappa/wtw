@@ -1,0 +1,28 @@
+id: sync-leaves-other-includes-untouched
+covers:
+  - WTW-FR-0008.AC-0802
+title: sync touches no other include-selected path
+description: >
+  real Git, simulated nothing. The primary `.worktreeinclude` selects `notes.txt`
+  in addition to the two control entries. After `sync`, the linked worktree's
+  `notes.txt` is left byte-for-byte unchanged (sync copies only the control
+  files), while the control files are still made canonical.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+  - cp: { from: "notes-original.txt", to: "wt-a/notes.txt" }
+command: ["sync"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized"]
+  stderr: ""
+  files:
+    "wt-a/notes.txt": "expected/notes.txt"
+    "wt-a/.config/wt.toml": "expected/wt.toml"

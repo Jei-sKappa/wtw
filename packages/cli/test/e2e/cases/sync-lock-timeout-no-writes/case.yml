@@ -1,0 +1,28 @@
+id: sync-lock-timeout-no-writes
+covers:
+  - WTW-FR-0008.AC-0804
+title: lock timeout exits 1 and writes nothing
+description: >
+  real Git, simulated nothing. A fresh (non-stale) mutex directory is pre-created
+  under the Git common directory to simulate a live lock holder. `sync` waits the
+  short documented timeout, then exits 1 without performing any write — the
+  primary workspace file is left byte-for-byte unchanged.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_LOCK_TIMEOUT_MS: "300"
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+  - run: { cmd: ["mkdir", "-p", ".git/wtw-sync.lock"] }
+command: ["sync"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: Another wtw sync is holding the repository lock; timed out after 300ms. No changes were made.\n"
+  files:
+    "repo/repo.code-workspace": "expected/workspace.txt"

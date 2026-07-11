@@ -16,8 +16,9 @@ const CASE_FIELDS = new Set([
   "setup",
   "expect",
 ]);
-const SETUP_STEP_FIELDS = new Set(["cli", "cp"]);
+const SETUP_STEP_FIELDS = new Set(["cli", "cp", "run"]);
 const CP_STEP_FIELDS = new Set(["from", "to"]);
+const RUN_STEP_FIELDS = new Set(["cmd", "background", "allowFailure", "env"]);
 const EXPECT_FIELDS = new Set([
   "exitCode",
   "stdout",
@@ -65,8 +66,27 @@ export type SetupCliStep = { cli: string[] };
  * paths are safe relatives. */
 export type SetupCpStep = { cp: { from: string; to: string } };
 
-/** One ordered setup pre-step: exactly a `cli:` or a `cp:` step. */
-export type SetupStep = SetupCliStep | SetupCpStep;
+/** A `run:` setup step: execute an arbitrary program with STRUCTURED arguments
+ * (never a shell string) from the case cwd, used to build real Git fixtures
+ * (`git init`, `git worktree add`), pre-create lock state, or drive a second
+ * overlapping `wtw` process. The first `cmd` element may be the token `__WTW__`,
+ * which the runner expands to the CLI entrypoint argv so a run step can invoke
+ * `wtw` itself with a step-local `env`. `background: true` launches the process
+ * without awaiting it inline (the runner awaits all background processes after
+ * the main command); `allowFailure: true` tolerates a non-zero exit (e.g. a
+ * deliberate fault-injection run); `env` is merged over the case environment for
+ * this step only. */
+export type SetupRunStep = {
+  run: {
+    cmd: string[];
+    background?: boolean;
+    allowFailure?: boolean;
+    env?: Record<string, string>;
+  };
+};
+
+/** One ordered setup pre-step: exactly a `cli:`, `cp:`, or `run:` step. */
+export type SetupStep = SetupCliStep | SetupCpStep | SetupRunStep;
 
 export type CaseManifest = {
   id: string;
@@ -256,12 +276,13 @@ function validateSetup(
     const where = `${field}[${index}]`;
     if (!isRecord(entry)) fail(source, `${where} must be a mapping.`);
     rejectUnknownFields(entry, SETUP_STEP_FIELDS, "setup step", source);
-    const hasCli = entry.cli !== undefined;
-    const hasCp = entry.cp !== undefined;
-    if (hasCli === hasCp) {
-      fail(source, `${where} must set exactly one of cli or cp.`);
+    const present = ["cli", "cp", "run"].filter(
+      (key) => entry[key] !== undefined,
+    );
+    if (present.length !== 1) {
+      fail(source, `${where} must set exactly one of cli, cp, or run.`);
     }
-    if (hasCli) {
+    if (entry.cli !== undefined) {
       if (!Array.isArray(entry.cli) || entry.cli.length === 0) {
         fail(source, `${where}.cli must be a non-empty string array.`);
       }
@@ -273,12 +294,51 @@ function validateSetup(
       });
       return { cli };
     }
+    if (entry.run !== undefined) {
+      return validateRunStep(entry.run, where, source);
+    }
     if (!isRecord(entry.cp)) fail(source, `${where}.cp must be a mapping.`);
     rejectUnknownFields(entry.cp, CP_STEP_FIELDS, "cp step", source);
     const from = validateSafePath(`${where}.cp.from`, entry.cp.from, source);
     const to = validateSafePath(`${where}.cp.to`, entry.cp.to, source);
     return { cp: { from, to } };
   });
+}
+
+/** Validate a `run:` step's nested body (`cmd`, optional flags, optional env). */
+function validateRunStep(
+  value: unknown,
+  where: string,
+  source: Source,
+): SetupRunStep {
+  if (!isRecord(value)) fail(source, `${where}.run must be a mapping.`);
+  rejectUnknownFields(value, RUN_STEP_FIELDS, "run step", source);
+  if (!Array.isArray(value.cmd) || value.cmd.length === 0) {
+    fail(source, `${where}.run.cmd must be a non-empty string array.`);
+  }
+  const cmd = value.cmd.map((item, argIndex) => {
+    if (typeof item !== "string") {
+      fail(source, `${where}.run.cmd[${argIndex}] must be a string.`);
+    }
+    return item;
+  });
+  const run: SetupRunStep["run"] = { cmd };
+  if (value.background !== undefined) {
+    if (typeof value.background !== "boolean") {
+      fail(source, `${where}.run.background must be a boolean.`);
+    }
+    run.background = value.background;
+  }
+  if (value.allowFailure !== undefined) {
+    if (typeof value.allowFailure !== "boolean") {
+      fail(source, `${where}.run.allowFailure must be a boolean.`);
+    }
+    run.allowFailure = value.allowFailure;
+  }
+  if (value.env !== undefined) {
+    run.env = validateEnvMap(value.env, `${where}.run.env`, source);
+  }
+  return { run };
 }
 
 export function validateCaseManifest(

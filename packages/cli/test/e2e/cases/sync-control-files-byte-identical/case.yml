@@ -1,0 +1,29 @@
+id: sync-control-files-byte-identical
+covers:
+  - WTW-FR-0008.AC-0801
+title: sync overwrites divergent linked control files
+description: >
+  real Git, simulated nothing. With a real primary and one linked worktree
+  holding DIVERGENT control copies, `sync` atomically makes the linked
+  `.config/wt.toml` and `.worktreeinclude` byte-identical to the authoritative
+  primary copies.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+  - cp: { from: "divergent/.config/wt.toml", to: "wt-a/.config/wt.toml" }
+  - cp: { from: "divergent/worktreeinclude", to: "wt-a/.worktreeinclude" }
+command: ["sync"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized"]
+  stderr: ""
+  files:
+    "wt-a/.config/wt.toml": "expected/wt.toml"
+    "wt-a/.worktreeinclude": "expected/worktreeinclude"

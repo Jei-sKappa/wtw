@@ -204,16 +204,28 @@ type SetupContext = {
   env: NodeJS.ProcessEnv;
   /** Label prefix for assertion/error context. */
   label: string;
+  /** Repo root, needed to resolve fake-shim sentinels in a run step's `env`. */
+  repoRoot?: string;
+  /** Collector for `background: true` run steps, awaited after the main command. */
+  background?: Promise<unknown>[];
 };
 
+/** The token a `run:` step uses as `cmd[0]` to mean "the wtw CLI entrypoint". */
+const WTW_ENTRYPOINT_TOKEN = "__WTW__";
+
 /**
- * Run the case's `setup` pre-steps in order, before the main `command`. A `cli:`
- * step runs the wtw CLI through the same entrypoint, cwd, and environment as the
- * main command — a non-zero exit fails the case loudly so a broken setup never
- * silently masquerades as the behavior under test. A `cp:` step copies a
- * case-relative fixture path onto a root-relative destination in the temp tree
- * (creating parent directories), the primitive that mutates a fixture between
- * two CLI runs.
+ * Run the case's `setup` pre-steps in order, before the main `command`.
+ *
+ * - A `cli:` step runs the wtw CLI through the same entrypoint, cwd, and
+ *   environment as the main command — a non-zero exit fails the case loudly so a
+ *   broken setup never silently masquerades as the behavior under test.
+ * - A `cp:` step copies a case-relative fixture path onto a root-relative
+ *   destination in the temp tree (creating parent directories).
+ * - A `run:` step executes an arbitrary program with structured args (real Git,
+ *   `mkdir`/`touch`, or the wtw entrypoint via the `__WTW__` token) with a
+ *   step-local env merged over the case env. `background: true` starts it without
+ *   awaiting inline (collected for the caller to await after the main command);
+ *   `allowFailure: true` tolerates a non-zero exit.
  */
 export async function runSetupSteps(
   steps: readonly SetupStep[],
@@ -235,6 +247,40 @@ export async function runSetupSteps(
         throw new Error(
           `${ctx.label} setup[${index}] cli step failed (exit ${result.exitCode}): ` +
             `wtw ${step.cli.join(" ")}\n${result.stderr}`,
+        );
+      }
+    } else if ("run" in step) {
+      const [rawBin, ...rawArgs] = step.run.cmd;
+      const [bin, args] =
+        rawBin === WTW_ENTRYPOINT_TOKEN
+          ? [cliFile, [...cliArgs, ...rawArgs]]
+          : [rawBin as string, rawArgs];
+      const stepEnv =
+        step.run.env === undefined
+          ? ctx.env
+          : {
+              ...ctx.env,
+              ...resolveEnv(step.run.env, ctx.repoRoot ?? process.cwd()),
+            };
+      const child = execa(bin, args, {
+        cwd: ctx.cwd,
+        env: stepEnv,
+        reject: false,
+        stripFinalNewline: false,
+      });
+      if (step.run.background === true) {
+        (ctx.background ?? []).push(
+          child.catch(() => {
+            /* background failures are surfaced only via later assertions */
+          }),
+        );
+        continue;
+      }
+      const result = await child;
+      if (result.exitCode !== 0 && step.run.allowFailure !== true) {
+        throw new Error(
+          `${ctx.label} setup[${index}] run step failed (exit ${result.exitCode}): ` +
+            `${step.run.cmd.join(" ")}\n${result.stderr}`,
         );
       }
     } else {
@@ -311,6 +357,7 @@ export async function runCase(
 
     // Run any `setup` pre-steps (in order) after fixture/substitute expansion
     // and before the main command, sharing the same cwd and environment.
+    const background: Promise<unknown>[] = [];
     await runSetupSteps(testCase.manifest.setup, {
       caseDir: testCase.dirPath,
       projectRoot,
@@ -318,6 +365,8 @@ export async function runCase(
       cli,
       env,
       label: `[${testCase.manifest.id}]`,
+      repoRoot,
+      background,
     });
 
     if (cliFile === undefined) {
@@ -333,6 +382,11 @@ export async function runCase(
         stripFinalNewline: false,
       },
     );
+
+    // Await any background setup processes (e.g. a second overlapping sync) so
+    // every write has landed before assertions read the tree — keeping a
+    // concurrency case deterministic.
+    await Promise.allSettled(background);
 
     const stdout = await readExpectedText(
       testCase,

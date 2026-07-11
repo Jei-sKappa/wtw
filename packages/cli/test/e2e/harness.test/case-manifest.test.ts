@@ -163,13 +163,44 @@ describe("validateCaseManifest", () => {
     ).toEqual([]);
   });
 
-  it("rejects a setup step that is neither cli nor cp, or sets both", () => {
+  it("accepts a run step and its optional flags/env", () => {
+    const manifest = validateCaseManifest(
+      {
+        ...validCase,
+        setup: [
+          { run: { cmd: ["git", "init", "."] } },
+          {
+            run: {
+              cmd: ["__WTW__", "sync"],
+              background: true,
+              allowFailure: true,
+              env: { WTW_TEST_HOLD_UNTIL: ".release" },
+            },
+          },
+        ],
+      },
+      { filePath: "test/e2e/cases/sync-concurrent/case.yml" },
+    );
+    expect(manifest.setup).toEqual([
+      { run: { cmd: ["git", "init", "."] } },
+      {
+        run: {
+          cmd: ["__WTW__", "sync"],
+          background: true,
+          allowFailure: true,
+          env: { WTW_TEST_HOLD_UNTIL: ".release" },
+        },
+      },
+    ]);
+  });
+
+  it("rejects a setup step that sets none or several of cli/cp/run", () => {
     expect(() =>
       validateCaseManifest(
         { ...validCase, setup: [{ run: ["init"] }] },
         { filePath: "test/e2e/cases/sync-drift/case.yml" },
       ),
-    ).toThrow(/unknown setup step field run/);
+    ).toThrow(/setup\[0\]\.run must be a mapping/);
 
     expect(() =>
       validateCaseManifest(
@@ -179,14 +210,14 @@ describe("validateCaseManifest", () => {
         },
         { filePath: "test/e2e/cases/sync-drift/case.yml" },
       ),
-    ).toThrow(/setup\[0\] must set exactly one of cli or cp/);
+    ).toThrow(/setup\[0\] must set exactly one of cli, cp, or run/);
 
     expect(() =>
       validateCaseManifest(
         { ...validCase, setup: [{}] },
         { filePath: "test/e2e/cases/sync-drift/case.yml" },
       ),
-    ).toThrow(/setup\[0\] must set exactly one of cli or cp/);
+    ).toThrow(/setup\[0\] must set exactly one of cli, cp, or run/);
   });
 
   it("rejects a malformed setup cli step", () => {
