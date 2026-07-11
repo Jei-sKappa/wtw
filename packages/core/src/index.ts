@@ -8,3 +8,20 @@ export const WTW_CORE_PACKAGE = "@wtw/core";
 
 export type { WtwErrorCode, WtwErrorDetails } from "./errors";
 export { WtwError } from "./errors";
+
+export type {
+  PredicateResult,
+  PrimarySupportConjunct,
+  PrimarySupportInput,
+  RepositoryContext,
+  WorktreeRecord,
+} from "./repo/worktree";
+export {
+  compareWorktreesForWorkspace,
+  DETACHED_LABEL_PREFIX,
+  isSupportedPrimary,
+  normalizeWorktreePath,
+  parseWorktreePorcelain,
+  SHORT_SHA_LENGTH,
+  worktreeDisplayName,
+} from "./repo/worktree";
