@@ -9,9 +9,20 @@
     The build-SHA form (`<version> (<short sha>)`, spec AC-15.2) and the
     Node-bundle/symlink-install criteria (spec AC-15.3, AC-15.4) are produced
     only from a bundled build where `WTW_GIT_SHA` is injected. They are not
-    reachable from the source-run fast E2E harness, so they are covered by
-    build-time checks authored in Task 14 (build) and mapped in Task 16, not by
-    a fast E2E case here.
+    reachable from the source-run fast E2E harness (which never builds a bundle),
+    so — following the FR-10 AC-10.4 precedent for criteria unreachable from the
+    fast suite — they are not declared as automated acceptance criteria here (that
+    would make the fast-harness traceability gate demand a fast E2E case that
+    cannot exist). Their evidence is build/install integration tests run by
+    `bun run test`: spec AC-15.2 (known-SHA bundle prints
+    `<version> (<sha>)`; a build with no resolvable SHA fails clearly) and spec
+    AC-15.3/AC-01.4 (Node shebang first line, self-contained, runs under Node with
+    no Bun on PATH) are established by `packages/cli/test/build.test.ts`; spec
+    AC-15.4 (the documented `~/.local/bin/wtw` symlink exposes the command on
+    PATH, a rebuild changes the reported SHA without reinstall, and removing the
+    symlink removes the command) is established by
+    `packages/cli/test/install.test.ts`. Task 16 traceability treats these as
+    covered because they are not active acceptance entries in this manifest.
   acceptance:
     - id: AC-1501
       statement: >

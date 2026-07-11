@@ -21,7 +21,11 @@ import {
   type ParseError,
   parse as parseJsonc,
   printParseErrorCode,
-} from "jsonc-parser";
+  // Import the ESM entry explicitly. `jsonc-parser`'s package `main` is a UMD
+  // bundle whose submodules load through lazy `require("./impl/...")` calls that
+  // a Node-target bundle cannot resolve at runtime; the ESM entry uses static
+  // `import` statements that bundle cleanly into the self-contained CLI.
+} from "jsonc-parser/lib/esm/main.js";
 import {
   compareWorktreesForWorkspace,
   type WorktreeRecord,

@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "bun run build:cli",
+    "build:cli": "cd packages/cli && bun run build",
     "check": "biome check .",
     "format": "biome format --write .",
     "test": "vitest run",

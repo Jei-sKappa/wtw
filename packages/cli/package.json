@@ -8,6 +8,7 @@
   },
   "files": ["dist"],
   "scripts": {
+    "build": "sha=\"$(git rev-parse --short HEAD)\" || exit 1; [ -n \"$sha\" ] || { echo \"wtw build: cannot resolve git short SHA; refusing to build without an embedded SHA\" >&2; exit 1; }; bun build src/index.ts --target=node --outdir=dist --banner='#!/usr/bin/env node' --define WTW_GIT_SHA=\"\\\"$sha\\\"\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
