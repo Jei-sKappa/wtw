@@ -1,0 +1,27 @@
+id: repo-prunable-primary
+covers:
+  - WTW-FR-0003.AC-0304
+title: a prunable primary record fails the support predicate without writes
+description: >
+  simulated Git (shape mode, `WTW_GIT_BIN` → the checked-in fake `git` deriving
+  every path from its own cwd), simulated Worktrunk/Cursor. The fake reports a
+  primary worktree record marked `prunable`, so `check`'s repository predicate
+  fails its `primary_not_prunable` conjunct independently of the other
+  conjuncts: the Repository category FAILs, dependent categories are SKIPPED,
+  and the command exits 1 without writing.
+env:
+  WTW_GIT_BIN: __FAKE_GIT_BIN__
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+  FAKE_GIT_SHAPE: "1"
+  FAKE_GIT_PRUNABLE: "1"
+command: ["check"]
+expect:
+  exitCode: 1
+  stdoutContains:
+    - "FAIL  The primary worktree record is prunable"
+    - "SKIPPED  Skipped because the repository context is unavailable."
+  stderr: ""

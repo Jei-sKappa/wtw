@@ -99,3 +99,21 @@ export async function lsFilesTracked(
   const listed = stdout.split("\0").filter((entry) => entry.length > 0);
   return new Set(listed);
 }
+
+/**
+ * List the repository-ignored, untracked paths under `cwd` via
+ * `git ls-files -z --others --ignored --exclude-standard`. `wtw check` supplies
+ * this set to `checkIncludeEntries` so a `.worktreeinclude` user entry that
+ * currently matches no ignored content is surfaced as a WARN (AC-07.2) rather
+ * than a false FAIL. `-z` keeps paths with spaces or newlines intact.
+ */
+export async function lsFilesIgnored(cwd: string): Promise<string[]> {
+  const stdout = await runGit(cwd, [
+    "ls-files",
+    "-z",
+    "--others",
+    "--ignored",
+    "--exclude-standard",
+  ]);
+  return stdout.split("\0").filter((entry) => entry.length > 0);
+}

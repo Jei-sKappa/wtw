@@ -1,0 +1,28 @@
+id: repo-permission-post-discovery
+covers:
+  - WTW-FR-0003.AC-0304
+title: a post-discovery Git failure is reported as an ordinary command failure
+description: >
+  simulated Git (shape mode; the fake succeeds on `--git-common-dir`, the
+  worktree list, and `--is-bare-repository`, then fails on `--show-toplevel` as
+  a permission error), simulated Worktrunk/Cursor. `check` treats the
+  post-discovery failure as an ordinary command failure surfaced under the
+  Repository category (not a support-boundary verdict), SKIPs the dependent
+  categories, and exits 1 without writing.
+env:
+  WTW_GIT_BIN: __FAKE_GIT_BIN__
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+  FAKE_GIT_SHAPE: "1"
+  FAKE_GIT_FAIL_ON: "--show-toplevel"
+  FAKE_GIT_STDERR: "fatal: could not read directory: Permission denied"
+command: ["check"]
+expect:
+  exitCode: 1
+  stdoutContains:
+    - "FAIL  Not a supported Git repository"
+    - "SKIPPED  Skipped because the repository context is unavailable."
+  stderr: ""

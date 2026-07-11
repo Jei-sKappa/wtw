@@ -29,7 +29,11 @@ import {
   WtwError,
 } from "@wtw/core";
 import { revParse, worktreeListPorcelain, worktreeRoot } from "../git/git";
-import { type PlatformSupport, resolvePlatformSupport } from "../platform";
+import {
+  type PlatformSupport,
+  platformOverrideFromEnv,
+  resolvePlatformSupport,
+} from "../platform";
 
 /** Options for {@link resolveRepositoryContext}; the platform seam aids testing. */
 export interface ResolveOptions {
@@ -71,7 +75,11 @@ export async function resolveRepositoryContext(
   options: ResolveOptions = {},
 ): Promise<RepositoryContext> {
   // 1. Platform gate — a deterministic, non-mutating error before any effect.
-  const platform: PlatformSupport = resolvePlatformSupport(options.platform);
+  //    An explicit option wins; otherwise the `WTW_PLATFORM` test seam selects a
+  //    simulated host; otherwise the real `process.platform` is classified.
+  const platform: PlatformSupport = resolvePlatformSupport(
+    options.platform ?? platformOverrideFromEnv(),
+  );
   if (platform.status === "unsupported") {
     throw new WtwError("unsupported_platform", platform.reason, {
       platform: platform.platform,

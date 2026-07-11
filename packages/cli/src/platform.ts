@@ -25,6 +25,27 @@ export interface PlatformSupport {
 }
 
 /**
+ * Env var that overrides the classified platform. This is primarily a test seam
+ * — the fast E2E harness cannot mutate `process.platform`, so a case sets
+ * `WTW_PLATFORM=linux` / `win32` / `darwin` to exercise the unverified,
+ * unsupported, and verified tiers deterministically. It only reclassifies the
+ * platform finding; it performs no effect of its own.
+ */
+export const PLATFORM_OVERRIDE_ENV = "WTW_PLATFORM";
+
+/**
+ * Read the {@link PLATFORM_OVERRIDE_ENV} override, or `undefined` when unset.
+ * Consumed by `resolveRepositoryContext` and `wtw check` so a simulated host
+ * platform can be selected without touching `process.platform`.
+ */
+export function platformOverrideFromEnv(): NodeJS.Platform | undefined {
+  const raw = process.env[PLATFORM_OVERRIDE_ENV];
+  return raw !== undefined && raw.length > 0
+    ? (raw as NodeJS.Platform)
+    : undefined;
+}
+
+/**
  * Classify a platform (defaulting to the current host) into its support tier.
  * The explicit `platform` parameter is the test seam that lets unit tests
  * simulate Linux (unverified) and Windows/other (unsupported) without mutating

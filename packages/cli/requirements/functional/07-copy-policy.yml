@@ -14,3 +14,8 @@
         A scaffolded `.worktreeinclude` contains the two required control paths
         and explanatory user-editing guidance, without guessed private-data
         entries. (spec AC-07.1)
+    - id: AC-0702
+      statement: >
+        `wtw check` FAILs when either required control entry is absent from
+        `.worktreeinclude`, and WARNs (rather than FAILs) for a user entry that
+        currently matches no ignored content. (spec AC-07.2)

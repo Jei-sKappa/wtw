@@ -1,0 +1,34 @@
+id: repo-path-with-spaces
+covers:
+  - WTW-FR-0003.AC-0302
+title: a repository path containing spaces resolves without splitting
+description: >
+  real Git, simulated Worktrunk/Cursor. The repository lives in a directory
+  whose name contains a space (`my repo`). `init` then `check` resolve and
+  operate on that path without argument splitting or corruption: every Git and
+  file operation uses structured arguments, and `check` names the primary
+  worktree at `<root>/my repo` with all findings passing, exiting 0.
+cwd: my repo
+substitute:
+  __PROJECT_ROOT__: projectRoot
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - cli: ["init"]
+command: ["check"]
+expect:
+  exitCode: 0
+  stdoutContains:
+    - "Supported repository; primary worktree at __PROJECT_ROOT__/my repo."
+    - "0 warn, 0 fail"
+  stderr: ""

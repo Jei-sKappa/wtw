@@ -1,0 +1,33 @@
+id: check-reports-missing-workspace
+covers:
+  - WTW-FR-0009.AC-0906
+title: check reports a missing Cursor workspace before repair
+description: >
+  real Git, simulated Worktrunk/Cursor. After a healthy `init`, the primary
+  workspace file is deleted. `check` reports the Cursor workspace as missing (a
+  FAIL; a plain `sync` will recreate it) and marks the Synchronization
+  folder-drift check SKIPPED rather than cascading a false failure. The command
+  exits 1. This is the `check`-side report half of AC-09.6.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - cli: ["init"]
+  - run: { cmd: ["rm", "repo.code-workspace"] }
+command: ["check"]
+expect:
+  exitCode: 1
+  stdoutContains:
+    - "FAIL  Cursor workspace repo.code-workspace is missing; run wtw sync to recreate it."
+    - "SKIPPED  Workspace folder drift not checked because the workspace file is missing"
+  stderr: ""

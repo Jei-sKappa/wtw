@@ -1,0 +1,44 @@
+- id: WTW-FR-0003
+  title: Repository resolution and support boundary
+  status: active
+  description: >
+    Every product command (`init`, `sync`, `check`) resolves the same
+    primary/common Git context from any supported invocation location — the
+    primary root, a nested primary directory, a linked worktree root, and a
+    nested linked directory — using structured (never shell-split) Git calls, so
+    repository and worktree paths containing spaces survive verbatim. macOS is
+    verified; Linux is allowed but reports unverified/best-effort status without
+    claiming suite evidence; Windows and every other platform are unsupported.
+    Supported repositories are non-bare and satisfy the five-conjunct
+    primary-worktree predicate (non-bare, a present main record, a non-prunable
+    main record, an existing primary path, and repository-root discovery
+    resolving to the primary). An unsupported platform or repository shape is a
+    deterministic, non-mutating finding/error; a post-discovery Git/permission
+    failure is an ordinary command failure.
+  notes: >
+    The exhaustive per-conjunct primary-predicate independence matrix
+    (bare, absent-main, prunable-main, missing-path, mismatched-root) and the
+    post-discovery permission failure are covered by the committed unit suite
+    `packages/cli/test/repo/resolve.test.ts`; the E2E cases here provide
+    representative product-command coverage of each active criterion.
+  acceptance:
+    - id: AC-0301
+      statement: >
+        Every product command (`init`, `sync`, `check`) invoked from the primary
+        root, a nested primary directory, a linked root, and a nested linked
+        directory resolves the same primary/common Git context. (spec AC-03.1)
+    - id: AC-0302
+      statement: >
+        A repository/worktree path containing spaces resolves without argument
+        splitting or path corruption. (spec AC-03.2)
+    - id: AC-0303
+      statement: >
+        A simulated Linux platform reports unverified/best-effort status without
+        claiming suite evidence, while bare, Windows, and non-repository
+        contexts produce deterministic unsupported/error findings without
+        writes. (spec AC-03.3)
+    - id: AC-0304
+      statement: >
+        Repository-shape cases fail a primary-support conjunct (e.g. a prunable
+        primary record) without writes, and a post-discovery permission failure
+        is reported as an ordinary command failure. (spec AC-03.4)

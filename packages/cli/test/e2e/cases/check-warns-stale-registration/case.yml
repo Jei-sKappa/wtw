@@ -1,0 +1,36 @@
+id: check-warns-stale-registration
+covers:
+  - WTW-FR-0009.AC-0905
+title: check warns about a stale worktree registration with cleanup guidance
+description: >
+  real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked
+  worktree is registered and then its directory is deleted, leaving a
+  missing/prunable registration. `check` excludes it from the folder list (no
+  drift) but reports a WARN under Cursor workspace with native cleanup guidance
+  (`git worktree prune` / `git worktree remove`); `wtw` never prunes it. A
+  warning-only run exits 0. (AC-09.5 check-side WARNING.)
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - cli: ["init"]
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+  - run: { cmd: ["rm", "-rf", "../wt-a"] }
+command: ["check"]
+expect:
+  exitCode: 0
+  stdoutContains:
+    - "WARN  1 Git worktree registration(s) are missing or prunable"
+    - "`git worktree prune`"
+    - "1 warn, 0 fail"
+  stderr: ""

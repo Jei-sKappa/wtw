@@ -1,0 +1,20 @@
+- id: WTW-FR-0012
+  title: Worktrunk compatibility
+  status: active
+  description: >
+    The verified Worktrunk range is `>=0.62.0 <0.63.0`. `wtw check` resolves the
+    Worktrunk version (`wt --version`, read-only) and evaluates it: a version in
+    range passes; a version below `0.62.0` and an unparseable/absent version
+    fail; `0.63.0` and newer warn as unverified but are not blocked.
+  notes: >
+    Spec AC-12.2 — the external-contract suite pinning a REAL Worktrunk v0.62.0
+    binary — is owned by Task 15 (the contract-mode harness) and is therefore
+    intentionally not declared active here; it is added with its covering
+    contract scenario when that suite lands, before the verified range is
+    represented as supported in the living document.
+  acceptance:
+    - id: AC-1201
+      statement: >
+        Parsed versions `0.62.0` and a later `0.62.x` pass the compatibility
+        finding; a version below `0.62.0` fails; `0.63.0` and a later version
+        warn but do not fail; unparseable output fails. (spec AC-12.1)

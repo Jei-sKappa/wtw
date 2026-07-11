@@ -1,0 +1,31 @@
+id: repo-linux-unverified
+covers:
+  - WTW-FR-0003.AC-0303
+title: a simulated Linux host reports unverified/best-effort without failing
+description: >
+  real Git, simulated Worktrunk/Cursor, simulated Linux platform
+  (`WTW_PLATFORM=linux`). On a healthy repository, `check` reports Linux as
+  allowed but unverified/best-effort — a WARN that never claims suite evidence —
+  while every other finding passes. A warning-only run exits 0.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: linux
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - cli: ["init"]
+command: ["check"]
+expect:
+  exitCode: 0
+  stdoutContains:
+    - "WARN  Linux is allowed but unverified/best-effort; the wtw suites have not been run there."
+    - "1 warn, 0 fail"
+  stderr: ""

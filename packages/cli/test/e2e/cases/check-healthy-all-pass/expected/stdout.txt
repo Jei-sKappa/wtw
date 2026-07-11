@@ -1,0 +1,25 @@
+Repository
+  PASS  macOS is a verified platform.
+  PASS  Supported repository; primary worktree at __PROJECT_ROOT__/repo.
+Dependencies
+  PASS  Git is available on PATH.
+  PASS  Worktrunk is available on PATH.
+  PASS  Cursor is available on PATH.
+  PASS  Node runtime is available on PATH.
+  PASS  wtw (hook executable) is available on PATH.
+Privacy
+  PASS  No required private path is tracked by Git.
+  PASS  Managed info/exclude block is present.
+Worktrunk
+  PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
+  PASS  .config/wt.toml carries the reserved wtw hooks.
+Copy policy
+  PASS  .worktreeinclude carries both required control entries.
+Synchronization
+  PASS  Linked worktree control files match the primary copies.
+  PASS  Cursor workspace folders match the current worktrees.
+Cursor workspace
+  PASS  Cursor workspace repo.code-workspace is valid JSONC.
+  PASS  No stale Git worktree registrations.
+
+Summary: 16 pass, 0 warn, 0 fail, 0 skipped.

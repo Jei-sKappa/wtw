@@ -1,0 +1,26 @@
+id: check-nonrepo-skips-dependents
+covers:
+  - WTW-FR-0011.AC-1103
+  - WTW-FR-0003.AC-0303
+title: an unresolved repository context marks dependent checks skipped, no cascade
+description: >
+  real Git, simulated Worktrunk/Cursor. `check` runs in a non-repository
+  directory: the Repository category FAILs deterministically (Git reports it is
+  not a repository) and every dependent category (Privacy, Worktrunk, Copy
+  policy, Synchronization, Cursor workspace) is marked SKIPPED rather than
+  emitting cascading false failures. Dependencies still report independently.
+  The command exits 1 and writes nothing.
+env:
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+command: ["check"]
+expect:
+  exitCode: 1
+  stdoutContains:
+    - "FAIL  Not a supported Git repository"
+    - "SKIPPED  Skipped because the repository context is unavailable."
+    - "0 warn, 1 fail, 5 skipped"
+  stderr: ""

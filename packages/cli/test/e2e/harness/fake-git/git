@@ -44,6 +44,72 @@ function recordInvocation() {
   }
 }
 
+function out(value) {
+  const text = String(value);
+  process.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
+  process.exit(0);
+}
+
+// Repository-SHAPE simulation, opt-in via FAKE_GIT_SHAPE (so the default,
+// single-stdout behavior stays byte-identical for every existing case and the
+// harness self-tests). In shape mode the fake derives every path from its OWN
+// cwd — so a case never has to hard-code a machine-dependent absolute path — and
+// toggles a single predicate via a boolean env, letting the FR-03 cases fail
+// each primary-support conjunct (and a post-discovery permission failure)
+// deterministically:
+//   FAKE_GIT_BARE       -> `rev-parse --is-bare-repository` reports "true"
+//   FAKE_GIT_PRUNABLE   -> the primary worktree record carries a `prunable` line
+//   FAKE_GIT_NO_PRIMARY -> `worktree list --porcelain` reports only a bare entry
+//   FAKE_GIT_TOPLEVEL_SUFFIX -> `--show-toplevel` returns <cwd>/<suffix>
+//                               (a root that does not resolve to the primary)
+//   FAKE_GIT_FAIL_ON    -> comma list of argv tokens that make the fake exit 128
+//                          after writing FAKE_GIT_STDERR (post-discovery failure)
+function shapeMain() {
+  const cwd = process.cwd();
+  const failOn = (process.env.FAKE_GIT_FAIL_ON ?? "")
+    .split(",")
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+  if (failOn.some((token) => argv.includes(token))) {
+    process.stderr.write(
+      `${process.env.FAKE_GIT_STDERR ?? "fatal: fake-git: simulated post-discovery failure"}\n`,
+    );
+    process.exit(128);
+  }
+
+  if (argv[0] === "rev-parse") {
+    if (argv.includes("--git-common-dir")) out(path.join(cwd, ".git"));
+    if (argv.includes("--is-bare-repository")) {
+      out(process.env.FAKE_GIT_BARE ? "true" : "false");
+    }
+    if (argv.includes("--show-toplevel")) {
+      const suffix = process.env.FAKE_GIT_TOPLEVEL_SUFFIX;
+      out(suffix ? path.join(cwd, suffix) : cwd);
+    }
+    process.stderr.write(`fatal: fake-git: unknown rev-parse ${argv.join(" ")}\n`);
+    process.exit(128);
+  }
+
+  if (argv[0] === "worktree" && argv[1] === "list") {
+    if (process.env.FAKE_GIT_NO_PRIMARY) {
+      out(`worktree ${path.join(cwd, ".bare")}\nbare\n`);
+    }
+    const lines = [
+      `worktree ${cwd}`,
+      "HEAD 1111111111111111111111111111111111111111",
+      "branch refs/heads/main",
+    ];
+    if (process.env.FAKE_GIT_PRUNABLE) {
+      lines.push("prunable gitdir file points to a non-existent location");
+    }
+    out(`${lines.join("\n")}\n`);
+  }
+
+  if (argv[0] === "ls-files") out("");
+
+  process.exit(0);
+}
+
 function main() {
   recordInvocation();
 
@@ -57,6 +123,11 @@ function main() {
       `${process.env.FAKE_GIT_STDERR ?? "fatal: fake-git: simulated failure"}\n`,
     );
     process.exit(1);
+  }
+
+  if (process.env.FAKE_GIT_SHAPE) {
+    shapeMain();
+    return;
   }
 
   const stdout = process.env.FAKE_GIT_STDOUT;
