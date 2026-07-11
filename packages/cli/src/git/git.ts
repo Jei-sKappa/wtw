@@ -77,3 +77,25 @@ export function revParse(cwd: string, ...args: string[]): Promise<string> {
 export function worktreeRoot(cwd: string): Promise<string> {
   return revParse(cwd, "--show-toplevel");
 }
+
+/**
+ * Report which of `paths` (relative to `cwd`) are tracked by Git, via
+ * `git ls-files -- <paths>`. Only tracked paths appear in the output, one per
+ * line, so the returned set is exactly the tracked subset. Used by the `init`
+ * privacy preflight: a required private path that is tracked is a privacy
+ * conflict (local excludes cannot hide tracked files), so `init` must abort with
+ * no writes. Arguments are structured so paths with spaces survive verbatim.
+ */
+export async function lsFilesTracked(
+  cwd: string,
+  paths: readonly string[],
+): Promise<Set<string>> {
+  if (paths.length === 0) {
+    return new Set();
+  }
+  const stdout = await runGit(cwd, ["ls-files", "-z", "--", ...paths]);
+  // `-z` yields NUL-separated entries so a path containing a newline cannot be
+  // mistaken for two entries. A trailing NUL leaves an empty final segment.
+  const listed = stdout.split("\0").filter((entry) => entry.length > 0);
+  return new Set(listed);
+}

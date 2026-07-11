@@ -12,6 +12,12 @@
     This file is authoritative for FR-09; the `init`-side criteria (creation,
     folder-list ordering, and missing/prunable exclusion) are added by Task 12.
   acceptance:
+    - id: AC-0901
+      statement: >
+        `init` creates a missing `<primary-directory-name>.code-workspace`;
+        adopts an existing valid-JSONC top-level object while preserving
+        everything outside `folders`; and fails without writes for invalid JSONC
+        or a non-object top level. (spec AC-09.1)
     - id: AC-0902
       statement: >
         Synchronization modifies only top-level `folders` in valid JSONC and
@@ -21,6 +27,17 @@
       statement: >
         Invalid JSONC (or a non-object top level) causes sync to exit 1 without
         changing the workspace file. (spec AC-09.3)
+    - id: AC-0904
+      statement: >
+        The reconciled folder list contains the primary first and every existing
+        linked worktree sorted by display name and then normalized absolute
+        path, using deterministic branch and detached labels. (spec AC-09.4)
+    - id: AC-0905
+      statement: >
+        Missing/prunable registrations are excluded from the reconciled folder
+        list and are not pruned by any `wtw` command. The complementary `check`
+        WARNING with native cleanup guidance is proven by `wtw check` (Task 13).
+        (spec AC-09.5)
     - id: AC-0906
       statement: >
         Plain `sync` recreates a missing workspace with the minimal scaffold and

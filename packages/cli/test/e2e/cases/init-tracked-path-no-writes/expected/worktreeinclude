@@ -1,0 +1,4 @@
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.

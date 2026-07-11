@@ -1,0 +1,35 @@
+id: init-injected-failure-no-rollback
+covers:
+  - WTW-FR-0004.AC-0404
+title: an injected post-write failure reports completed writes without rollback
+description: >
+  real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A
+  test-only fault is injected immediately after the `.worktreeinclude` scaffold
+  is written. `init` exits 1, reports on stdout the writes it completed before
+  the failure, and attempts no broad rollback: both completed scaffolds remain
+  on disk byte-for-byte.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_TEST_FAIL_AFTER: worktreeinclude
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+command: ["init"]
+expect:
+  exitCode: 1
+  stdoutContains:
+    - "Initialization did not complete"
+    - ".config/wt.toml"
+    - ".worktreeinclude"
+  stderr: "Error: Simulated filesystem failure during initialization (test only); completed writes were left in place without rollback.\n"
+  files:
+    "repo/.config/wt.toml": "expected/wt.toml"
+    "repo/.worktreeinclude": "expected/worktreeinclude"

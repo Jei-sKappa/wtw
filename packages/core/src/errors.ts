@@ -24,7 +24,9 @@ export type WtwErrorCode =
   | "lock_unavailable"
   | "workspace_invalid"
   | "sync_failed"
-  | "cursor_launch_failed";
+  | "cursor_launch_failed"
+  | "init_preflight_failed"
+  | "init_failed";
 
 /** Structured, serializable context attached to a `WtwError`. */
 export type WtwErrorDetails = Record<

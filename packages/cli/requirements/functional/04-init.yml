@@ -1,0 +1,38 @@
+- id: WTW-FR-0004
+  title: Initialization preflight and idempotency
+  status: active
+  description: >
+    `wtw init` runs a COMPLETE predictable-conflict preflight before writing
+    anything and writes nothing on any conflict: allowed OS and non-bare
+    repository shape, the primary-worktree predicate, presence of Git,
+    Worktrunk, Cursor, the Node runtime, and the `wtw` executable used by hooks
+    (all resolved through `PATH` without being spawned), untracked required
+    private paths, valid-or-absent standard artifacts, exact reserved hooks in an
+    existing `.config/wt.toml`, and validity of existing `.worktreeinclude`,
+    workspace JSONC, and managed exclude content. After a clean preflight it
+    creates only the missing scaffolds, reconciles the managed `info/exclude`
+    block, and runs the same internal blocking synchronization as `wtw sync`
+    with Cursor closed. A healthy rerun is a no-op apart from reconciliation; an
+    unexpected filesystem failure mid-write reports every completed write, exits
+    1, and attempts no broad destructive rollback.
+  acceptance:
+    - id: AC-0401
+      statement: >
+        Each predictable conflict enumerated by the `init` contract exits 1 and
+        leaves the complete fixture byte-for-byte unchanged. (spec AC-04.1)
+    - id: AC-0402
+      statement: >
+        On an empty supported repository, `init` creates exactly the canonical
+        TOML, include, workspace, and managed-exclude content, synchronizes
+        existing linked worktrees, launches neither Cursor nor approval, and
+        exits 0. (spec AC-04.2)
+    - id: AC-0403
+      statement: >
+        Rerunning `init` on a healthy setup exits 0, preserves user-authored
+        bytes outside managed regions, and makes no semantic change beyond
+        required reconciliation. (spec AC-04.3)
+    - id: AC-0404
+      statement: >
+        An injected post-write filesystem failure exits 1 and reports the writes
+        completed before failure without attempting broad deletion/rollback.
+        (spec AC-04.4)

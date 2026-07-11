@@ -1,0 +1,5 @@
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-remove]
+wtw-sync = "wtw sync"

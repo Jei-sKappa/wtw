@@ -1,0 +1,57 @@
+id: init-empty-repo-creates-all
+covers:
+  - WTW-FR-0004.AC-0402
+  - WTW-FR-0006.AC-0601
+  - WTW-FR-0006.AC-0604
+  - WTW-FR-0007.AC-0701
+  - WTW-FR-0009.AC-0901
+  - WTW-FR-0009.AC-0904
+  - WTW-FR-0010.AC-1001
+title: init creates every canonical artifact and synchronizes linked worktrees
+description: >
+  real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned).
+  On an empty supported repository with two linked worktrees, `init` creates the
+  canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`,
+  reconciles the managed `info/exclude` block, propagates control files to both
+  linked worktrees, and orders the workspace folders (primary first, then the
+  linked worktrees sorted by display name). It launches neither Cursor nor
+  Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
+cwd: repo
+substitute:
+  __PROJECT_ROOT__: projectRoot
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-b", "../wt-b"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+command: ["init"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Created:", "Synchronized"]
+  stderr: ""
+  files:
+    "repo/.config/wt.toml": "expected/wt.toml"
+    "repo/.worktreeinclude": "expected/worktreeinclude"
+    "repo/repo.code-workspace": "expected/workspace"
+    "wt-a/.config/wt.toml": "expected/wt.toml"
+    "wt-a/.worktreeinclude": "expected/worktreeinclude"
+    "wt-b/.config/wt.toml": "expected/wt.toml"
+    "wt-b/.worktreeinclude": "expected/worktreeinclude"
+    "repo/.fake-cursor.log": "expected/empty-log"
+    "repo/.fake-wt.log": "expected/empty-log"
+  fileContains:
+    "repo/.git/info/exclude":
+      - "# >>> wtw managed >>>"
+      - ".config/wt.toml"
+      - ".worktreeinclude"
+      - "repo.code-workspace"
+      - "# <<< wtw managed <<<"

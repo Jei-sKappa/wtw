@@ -1,0 +1,35 @@
+id: init-adopts-existing-workspace
+covers:
+  - WTW-FR-0009.AC-0901
+title: init adopts an existing valid workspace, preserving everything outside folders
+description: >
+  real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The
+  primary already has a valid-JSONC `<repo>.code-workspace` carrying a comment
+  and a user `settings` property alongside an empty `folders`. `init` adopts it:
+  it reconciles only `folders` (primary plus the existing linked worktree) and
+  preserves the comment and the unrelated `settings` property.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+  - run: { cmd: ["git", "worktree", "add", "-b", "feature-a", "../wt-a"] }
+  - cp: { from: "seed/workspace", to: "repo/repo.code-workspace" }
+command: ["init"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Synchronized", "updated"]
+  stderr: ""
+  fileContains:
+    "repo/repo.code-workspace":
+      - "// my workspace"
+      - "editor.tabSize"
+      - "feature-a"

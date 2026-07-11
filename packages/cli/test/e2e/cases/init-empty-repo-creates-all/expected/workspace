@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": "__PROJECT_ROOT__/repo"
+    },
+    {
+      "name": "feature-a",
+      "path": "__PROJECT_ROOT__/wt-a"
+    },
+    {
+      "name": "feature-b",
+      "path": "__PROJECT_ROOT__/wt-b"
+    }
+  ]
+}

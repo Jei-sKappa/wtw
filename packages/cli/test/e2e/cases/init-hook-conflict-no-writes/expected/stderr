@@ -1,0 +1,5 @@
+Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
+  - Existing .config/wt.toml is missing required wtw hooks or uses conflicting commands; add exactly the block(s) below, then rerun init.
+
+[post-start]
+wtw-sync = "wtw sync --open"

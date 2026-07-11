@@ -1,0 +1,36 @@
+id: init-tracked-path-no-writes
+covers:
+  - WTW-FR-0004.AC-0401
+  - WTW-FR-0005.AC-0502
+title: a tracked required private path makes init perform no writes
+description: >
+  real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A
+  required private path (`.worktreeinclude`) is committed, so it is tracked by
+  Git. Because a local exclude cannot hide a tracked file, `init` reports the
+  privacy conflict, exits 1, and writes nothing: the tracked file and the
+  user-authored `info/exclude` are both byte-for-byte unchanged (no managed
+  block is added).
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - cp: { from: "seed/worktreeinclude", to: "repo/.worktreeinclude" }
+  - run: { cmd: ["git", "add", ".worktreeinclude"] }
+  - run: { cmd: ["git", "commit", "-m", "track worktreeinclude"] }
+  - cp: { from: "seed/exclude", to: "repo/.git/info/exclude" }
+command: ["init"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderrFile: "expected/stderr"
+  files:
+    "repo/.worktreeinclude": "expected/worktreeinclude"
+    "repo/.git/info/exclude": "expected/info-exclude"

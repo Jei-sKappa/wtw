@@ -1,0 +1,36 @@
+- id: WTW-FR-0006
+  title: Worktrunk configuration and customization
+  status: active
+  description: >
+    `wtw` scaffolds a standard `.config/wt.toml` only when it is absent, with the
+    three reserved hooks (`pre-start` blocking copy, `post-start`
+    sync-and-open, `post-remove` sync) carrying their exact contract command
+    strings. `wtw` never rewrites an existing TOML: a file that already carries
+    all reserved hooks — alongside any custom hooks, comments, order, and
+    settings — is preserved byte-for-byte, while a missing or conflicting
+    reserved hook is a no-write preflight conflict reporting the exact manual
+    additions the user must make before rerunning. `init` neither invokes nor
+    mutates Worktrunk approval.
+  acceptance:
+    - id: AC-0601
+      statement: >
+        A missing `.config/wt.toml` is scaffolded with exact distinct
+        blocking-copy, post-start-sync/open, and post-remove-sync commands.
+        (spec AC-06.1)
+    - id: AC-0602
+      statement: >
+        An existing TOML file with all reserved hooks is preserved
+        byte-for-byte, including unrelated custom hooks, comments, order, and
+        settings. (spec AC-06.2)
+    - id: AC-0603
+      statement: >
+        An existing TOML missing or conflicting with a reserved hook makes
+        `init` perform no writes and print the exact manual additions; after the
+        fixture is manually corrected, a rerun succeeds without rewriting it.
+        (spec AC-06.3)
+    - id: AC-0604
+      statement: >
+        Initialization neither invokes nor mutates Worktrunk approval (the
+        Worktrunk executable is only resolved on `PATH`, never spawned). The
+        real-contract native first-use approval observation is proven by Task
+        15. (spec AC-06.4)

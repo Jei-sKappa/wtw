@@ -1,0 +1,16 @@
+- id: WTW-FR-0007
+  title: Copy policy
+  status: active
+  description: >
+    When `.worktreeinclude` is absent, `init` scaffolds a documented copy policy
+    carrying exactly the two required control entries (`.config/wt.toml`,
+    `.worktreeinclude`) plus user-editing guidance, with no guessed private-data
+    entries — the user owns and edits the copy policy. This file is authoritative
+    for FR-07; the `check`-side entry findings (AC-07.2) are added by Task 13 and
+    the real-contract native-copy proof (AC-07.3) by Task 15.
+  acceptance:
+    - id: AC-0701
+      statement: >
+        A scaffolded `.worktreeinclude` contains the two required control paths
+        and explanatory user-editing guidance, without guessed private-data
+        entries. (spec AC-07.1)
