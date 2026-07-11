@@ -5,3 +5,6 @@
 //
 // Placeholder export; real domain surface is introduced by later tasks.
 export const WTW_CORE_PACKAGE = "@wtw/core";
+
+export type { WtwErrorCode, WtwErrorDetails } from "./errors";
+export { WtwError } from "./errors";
