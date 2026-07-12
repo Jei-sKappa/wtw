@@ -1,9 +1,14 @@
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadCases } from "./harness/case-manifest";
 import { runCase } from "./harness/case-runner";
 import { loadRequirements } from "./harness/requirements";
-import { validateTraceability } from "./harness/traceability";
+import {
+  type TraceabilityContext,
+  validateTraceability,
+} from "./harness/traceability";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 
@@ -25,6 +30,20 @@ const fastCases = cases.filter(
   (entry) => (entry.manifest.mode ?? "fast") === "fast",
 );
 
+// Evidence resolution is disk-derived: `unit` refs are repo-root-relative
+// (the git repo root is two levels above this package root), and `manual` refs
+// resolve against the release checklist. The traceability authority owns the
+// rules; the caller only supplies the context.
+const gitRepoRoot = path.resolve(repoRoot, "../..");
+const traceabilityContext: TraceabilityContext = {
+  repoFileExists: (repoRelativePath) =>
+    existsSync(path.join(gitRepoRoot, repoRelativePath)),
+  checklistContent: await readFile(
+    path.join(repoRoot, "docs/RELEASE-CHECKLIST.md"),
+    "utf8",
+  ),
+};
+
 describe("e2e case tree", () => {
   it("has valid requirement traceability", async () => {
     const requirements = await loadRequirements(repoRoot);
@@ -32,6 +51,7 @@ describe("e2e case tree", () => {
       validateTraceability(
         requirements,
         cases.map((entry) => entry.manifest),
+        traceabilityContext,
       ),
     ).not.toThrow();
   });

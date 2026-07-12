@@ -1,9 +1,13 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { loadCases } from "../test/e2e/harness/case-manifest";
 import { loadRequirements } from "../test/e2e/harness/requirements";
-import { validateTraceability } from "../test/e2e/harness/traceability";
+import {
+  type TraceabilityContext,
+  validateTraceability,
+} from "../test/e2e/harness/traceability";
 import {
   loadAreas,
   loadRenderCases,
@@ -40,15 +44,26 @@ export async function generateLivingDocs(options: {
   const { root, check } = options;
 
   // Enforce full traceability as part of generation (the same single authority
-  // the e2e suite calls): every active FR-02..FR-13 criterion must have a
-  // covering case before the document can be written or drift-checked.
-  const [requirements, loadedCases] = await Promise.all([
+  // the e2e suite calls): every active acceptance criterion must be proven by
+  // its declared evidence before the document can be written or drift-checked.
+  // Evidence resolution is disk-derived — the git repo root is two levels above
+  // this package root (`unit` refs are repo-root-relative), and `manual` refs
+  // resolve against the release checklist.
+  const [requirements, loadedCases, checklistContent] = await Promise.all([
     loadRequirements(root),
     loadCases(root),
+    readFile(path.join(root, "docs/RELEASE-CHECKLIST.md"), "utf8"),
   ]);
+  const gitRepoRoot = path.resolve(root, "../..");
+  const traceabilityContext: TraceabilityContext = {
+    repoFileExists: (repoRelativePath) =>
+      existsSync(path.join(gitRepoRoot, repoRelativePath)),
+    checklistContent,
+  };
   validateTraceability(
     requirements,
     loadedCases.map((entry) => entry.manifest),
+    traceabilityContext,
   );
 
   const [areas, cases] = await Promise.all([

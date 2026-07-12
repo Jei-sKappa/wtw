@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -343,10 +344,21 @@ describe("living document generation (integration)", () => {
     expect(rendered).toBe(onDisk);
   });
 
-  it("covers every active FR-02..FR-13 criterion (traceability holds)", async () => {
+  it("covers every active acceptance criterion (traceability holds)", async () => {
     const requirements = await loadRequirements(packageRoot);
     const cases = (await loadCases(packageRoot)).map((entry) => entry.manifest);
-    expect(() => validateTraceability(requirements, cases)).not.toThrow();
+    const gitRepoRoot = path.resolve(packageRoot, "../..");
+    const context = {
+      repoFileExists: (repoRelativePath: string) =>
+        existsSync(path.join(gitRepoRoot, repoRelativePath)),
+      checklistContent: await readFile(
+        path.join(packageRoot, "docs/RELEASE-CHECKLIST.md"),
+        "utf8",
+      ),
+    };
+    expect(() =>
+      validateTraceability(requirements, cases, context),
+    ).not.toThrow();
   });
 
   it("--check fails on injected drift, writes nothing, and passes once reverted", async () => {
