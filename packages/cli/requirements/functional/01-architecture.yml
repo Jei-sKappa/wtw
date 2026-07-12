@@ -1,0 +1,94 @@
+- id: ARCH-FR-0001
+  title: Workspace shape and core purity
+  status: active
+  description: >
+    wtw is a private Bun workspace with exactly two packages: the pure domain
+    package `@wtw/core` and the effectful `@wtw/cli`, which consumes core through
+    a workspace dependency. Core stays pure: it imports no CLI, process-argument,
+    subprocess, terminal-output, or filesystem-effect surface. Formatting,
+    linting, strict type checking, and tests all run through the repository's
+    root aggregate scripts. These architecture invariants are unreachable from
+    the source-run E2E harness, so each is proven by a named unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The domain package imports no command-line, process-argument,
+        subprocess, terminal-output, or filesystem-effect module.
+      verifiedBy: unit
+      unitTest: packages/core/test/dependency-boundary.test.ts
+    - id: AC-0002
+      statement: >
+        The repository declares a two-package Bun workspace whose CLI package
+        depends on the domain package through the workspace protocol.
+      verifiedBy: unit
+      unitTest: packages/cli/test/toolchain.test.ts
+    - id: AC-0003
+      statement: >
+        Formatting, linting, type checking, and tests are wired through the
+        repository's root aggregate scripts.
+      verifiedBy: unit
+      unitTest: packages/cli/test/toolchain.test.ts
+
+- id: ARCH-FR-0002
+  title: Bundled Node runtime identity
+  status: active
+  description: >
+    `bun run build` produces a self-contained Node bundle with a Node shebang
+    that runs under the supported Node runtime with no Bun present, embedding the
+    resolved short Git commit as part of its reported version. A build that
+    cannot resolve a commit aborts rather than emitting a bundle. These
+    build-time facts are unobservable from the source-run E2E harness and are
+    proven by the build unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The built bundle carries a Node shebang and runs under Node with no Bun
+        on the path.
+      verifiedBy: unit
+      unitTest: packages/cli/test/build.test.ts
+    - id: AC-0002
+      statement: >
+        The built bundle contains no unresolved domain-package or relative
+        runtime import.
+      verifiedBy: unit
+      unitTest: packages/cli/test/build.test.ts
+    - id: AC-0003
+      statement: >
+        An injected short commit hash appears in the built bundle's reported
+        version output.
+      verifiedBy: unit
+      unitTest: packages/cli/test/build.test.ts
+    - id: AC-0004
+      statement: >
+        A build that cannot resolve a Git commit fails clearly instead of
+        emitting a bundle.
+      verifiedBy: unit
+      unitTest: packages/cli/test/build.test.ts
+
+- id: ARCH-FR-0003
+  title: Local symlink install
+  status: active
+  description: >
+    The documented local-use flow exposes `wtw` through a symlink from a path
+    directory to the built bundle. A rebuild in place changes the reported
+    embedded commit without touching the symlink, and removing the symlink
+    removes the command. This install identity is unreachable from the
+    source-run E2E harness and is proven by the install unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A symlink from a path directory to the built bundle exposes the command
+        through the path.
+      verifiedBy: unit
+      unitTest: packages/cli/test/install.test.ts
+    - id: AC-0002
+      statement: >
+        Rebuilding the bundle in place changes the command's reported embedded
+        commit without touching the symlink.
+      verifiedBy: unit
+      unitTest: packages/cli/test/install.test.ts
+    - id: AC-0003
+      statement: >
+        Removing the symlink removes the command from the path.
+      verifiedBy: unit
+      unitTest: packages/cli/test/install.test.ts

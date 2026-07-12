@@ -1,0 +1,147 @@
+- id: HARNESS-FR-0001
+  title: Requirement manifest schema strictness
+  status: active
+  description: >
+    The requirement manifest loader is strict: it rejects malformed requirement
+    or acceptance identifiers, unknown fields, missing or unrecognized
+    verification kinds, and acceptance statements that smuggle reserved
+    cross-reference tokens. Strictness is inherent to the harness and is proven
+    by the requirement-schema unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A malformed requirement identifier is rejected at load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/requirements.test.ts
+    - id: AC-0002
+      statement: >
+        An unknown field on a requirement or an acceptance entry is rejected at
+        load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/requirements.test.ts
+    - id: AC-0003
+      statement: >
+        A missing or unrecognized verification kind is rejected at load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/requirements.test.ts
+    - id: AC-0004
+      statement: >
+        An acceptance statement carrying a reserved cross-reference token is
+        rejected at load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/requirements.test.ts
+
+- id: HARNESS-FR-0002
+  title: Case manifest schema strictness
+  status: active
+  description: >
+    The E2E case loader is equally strict: it rejects unknown fields, coverage
+    references that are not a single compound target, and unsafe fixture paths.
+    This strictness is inherent to the harness and is proven by the case-schema
+    unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A case manifest with an unknown field is rejected at load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/case-manifest.test.ts
+    - id: AC-0002
+      statement: >
+        A case coverage reference that is not a single compound target is
+        rejected at load time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/case-manifest.test.ts
+    - id: AC-0003
+      statement: >
+        A case fixture path that escapes its case directory is rejected at load
+        time.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/case-manifest.test.ts
+
+- id: HARNESS-FR-0003
+  title: Single traceability authority
+  status: active
+  description: >
+    One shared traceability function is the sole authority the E2E suite and the
+    living-document generator both call, so the gate and the document can never
+    disagree. It enforces the one-to-one mapping between declarative cases and
+    their criteria, verification-mode alignment for real-tool assumptions, and
+    resolution of unit and manual evidence references. It is proven by the
+    traceability unit test that feeds each violation to the shared function.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A declarative case covering zero or more than one criterion fails the
+        shared traceability check.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/traceability.test.ts
+    - id: AC-0002
+      statement: >
+        An active case-verified criterion with no covering case fails the shared
+        traceability check.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/traceability.test.ts
+    - id: AC-0003
+      statement: >
+        A simulated-mode case covering a real-tool assumption fails the shared
+        traceability check.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/traceability.test.ts
+    - id: AC-0004
+      statement: >
+        A unit-verified criterion naming a missing test file fails the shared
+        traceability check.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/traceability.test.ts
+    - id: AC-0005
+      statement: >
+        A manual-verified criterion naming an unresolved checklist step fails
+        the shared traceability check.
+      verifiedBy: unit
+      unitTest: packages/cli/test/e2e/harness.test/traceability.test.ts
+
+- id: HARNESS-FR-0004
+  title: Living behavior document generation and drift
+  status: active
+  description: >
+    The behavior document is fully generated: the renderer emits every active
+    criterion exactly once with its own kind-labeled evidence block and the
+    real-versus-simulated dependency labeling, and the drift check fails on any
+    byte change. This generation and drift behavior is proven by the
+    living-document unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The generator renders every active criterion exactly once with its own
+        evidence block.
+      verifiedBy: unit
+      unitTest: packages/cli/test/living-docs.test.ts
+    - id: AC-0002
+      statement: >
+        Rendered case and checkpoint evidence is labeled as real or simulated
+        per dependency.
+      verifiedBy: unit
+      unitTest: packages/cli/test/living-docs.test.ts
+    - id: AC-0003
+      statement: >
+        The drift check reports failure when the generated document differs from
+        the committed one and writes nothing.
+      verifiedBy: unit
+      unitTest: packages/cli/test/living-docs.test.ts
+
+- id: HARNESS-FR-0005
+  title: Aggregate verification gate
+  status: active
+  description: >
+    The repository's aggregate gate script chains formatting/linting, type
+    checking, package tests, fast E2E, the real external contract, behavior-doc
+    drift, and build so that a failing stage aborts the run. This fail-fast
+    composition is a repository-tooling invariant unreachable from the E2E
+    harness and is proven by the toolchain unit test.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The aggregate gate script chains every verification stage so a failing
+        stage aborts the remaining stages.
+      verifiedBy: unit
+      unitTest: packages/cli/test/toolchain.test.ts

@@ -1,0 +1,120 @@
+- id: WTA-FR-0001
+  title: Native worktree-creation approval
+  status: active
+  description: >
+    Real Worktrunk gates first-use worktree creation behind its own native
+    approval, and wtw neither grants nor bypasses it. A non-interactive create
+    without explicit approval is refused, and the refusal grants nothing in the
+    isolated native approval store. These are multi-step observations of the
+    real binary, each proven by a named checkpoint of the real-Worktrunk
+    scenario.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A non-interactive worktree create without explicit approval is refused
+        by real Worktrunk.
+      verifiedBy: checkpoint
+    - id: AC-0002
+      statement: >
+        A refused worktree create leaves the isolated native approval store
+        empty.
+      verifiedBy: checkpoint
+
+- id: WTA-FR-0002
+  title: Blocking pre-start copy before readiness
+  status: active
+  description: >
+    Real Worktrunk runs the reserved blocking pre-start hook before a successful
+    create returns, so selected ignored data and both control files copied from
+    the primary already exist in the new worktree the moment the create command
+    returns. Each is proven by a named checkpoint of the real-Worktrunk
+    scenario.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        Selected ignored data from the primary exists in the new worktree the
+        moment a successful create returns.
+      verifiedBy: checkpoint
+    - id: AC-0002
+      statement: >
+        Both control files exist in the new worktree the moment a successful
+        create returns.
+      verifiedBy: checkpoint
+
+- id: WTA-FR-0003
+  title: Primary-authoritative copy source
+  status: active
+  description: >
+    The pre-start copy always sources from the primary worktree, even when the
+    new branch base is a linked worktree whose ignored content has diverged. The
+    new worktree receives the primary's ignored data and both control files, not
+    the divergent base's. Each is proven by a named checkpoint of the
+    real-Worktrunk scenario.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        Ignored data in a worktree created off a divergent linked base matches
+        the primary rather than that base.
+      verifiedBy: checkpoint
+    - id: AC-0002
+      statement: >
+        Both control files are present in a worktree created off a linked base.
+      verifiedBy: checkpoint
+
+- id: WTA-FR-0004
+  title: Background post-start reconciliation
+  status: active
+  description: >
+    After a successful create, real Worktrunk fires the reserved background
+    post-start hook that runs the wtw synchronization with editor launch,
+    reconciling the root workspace to list the new worktree and opening the
+    editor once on the absolute root workspace path. Each is proven by a named
+    checkpoint of the real-Worktrunk scenario.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The background post-start hook reconciles the root workspace to list the
+        newly created worktree.
+      verifiedBy: checkpoint
+    - id: AC-0002
+      statement: >
+        The background post-start hook opens the editor once on the absolute
+        root workspace path.
+      verifiedBy: checkpoint
+
+- id: WTA-FR-0005
+  title: Background post-remove reconciliation
+  status: active
+  description: >
+    Removing a linked worktree through real Worktrunk fires the reserved
+    background post-remove hook that runs the plain wtw synchronization,
+    reconciling the root workspace to drop the removed worktree and, lacking the
+    launch flag, opening no editor. Each is proven by a named checkpoint of the
+    real-Worktrunk scenario.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The background post-remove hook reconciles the root workspace to drop
+        the removed worktree.
+      verifiedBy: checkpoint
+    - id: AC-0002
+      statement: >
+        The post-remove reconciliation opens no editor because it carries no
+        launch flag.
+      verifiedBy: checkpoint
+
+- id: WTA-FR-0006
+  title: Real binary version reporting
+  status: active
+  caseMode: contract
+  description: >
+    The pinned real Worktrunk binary reports its version through its version
+    command, giving wtw's read-only compatibility check real evidence. Because a
+    single command suffices, this assumption is proven by one contract-mode case
+    against the real binary rather than by a lifecycle checkpoint.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        The pinned real Worktrunk binary reports its version as the pinned
+        release.
+      verifiedBy: case
