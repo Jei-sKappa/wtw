@@ -1,36 +1,65 @@
-- id: WTW-FR-0006
-  title: Worktrunk configuration and customization
+- id: CONF-FR-0001
+  title: Scaffolding a missing wt.toml
   status: active
   description: >
-    `wtw` scaffolds a standard `.config/wt.toml` only when it is absent, with the
-    three reserved hooks (`pre-start` blocking copy, `post-start`
-    sync-and-open, `post-remove` sync) carrying their exact contract command
-    strings. `wtw` never rewrites an existing TOML: a file that already carries
-    all reserved hooks — alongside any custom hooks, comments, order, and
-    settings — is preserved byte-for-byte, while a missing or conflicting
-    reserved hook is a no-write preflight conflict reporting the exact manual
-    additions the user must make before rerunning. `init` neither invokes nor
-    mutates Worktrunk approval.
+    When `.config/wt.toml` is absent, `wtw init` scaffolds a standard Worktrunk
+    project config carrying the three reserved wtw hooks with their exact
+    contract command strings: a `pre-start` blocking copy, a `post-start`
+    sync-and-open, and a `post-remove` sync.
   acceptance:
-    - id: AC-0601
+    - id: AC-0001
       statement: >
-        A missing `.config/wt.toml` is scaffolded with exact distinct
-        blocking-copy, post-start-sync/open, and post-remove-sync commands.
-        (spec AC-06.1)
-    - id: AC-0602
+        A scaffolded `.config/wt.toml` carries the three reserved hooks with
+        their exact distinct blocking-copy, post-start sync/open, and
+        post-remove sync command strings.
+      verifiedBy: case
+
+- id: CONF-FR-0002
+  title: Preserving an existing compatible TOML
+  status: active
+  description: >
+    `wtw` never rewrites an existing `.config/wt.toml`. A file that already
+    carries all three reserved hooks is preserved byte-for-byte, including any
+    unrelated custom hooks, comments, ordering, and settings.
+  acceptance:
+    - id: AC-0001
       statement: >
-        An existing TOML file with all reserved hooks is preserved
-        byte-for-byte, including unrelated custom hooks, comments, order, and
-        settings. (spec AC-06.2)
-    - id: AC-0603
+        An existing TOML carrying all reserved hooks is left byte-for-byte
+        unchanged, including custom hooks, comments, order, and settings.
+      verifiedBy: case
+
+- id: CONF-FR-0003
+  title: Reserved-hook conflict handling
+  status: active
+  description: >
+    A `.config/wt.toml` that is missing a reserved hook, or defines one whose
+    command conflicts with the contract, is a no-write preflight conflict: init
+    performs no writes and prints the exact manual additions the user must make.
+    After the user corrects the file by hand, a rerun succeeds without rewriting
+    it.
+  acceptance:
+    - id: AC-0001
       statement: >
-        An existing TOML missing or conflicting with a reserved hook makes
-        `init` perform no writes and print the exact manual additions; after the
-        fixture is manually corrected, a rerun succeeds without rewriting it.
-        (spec AC-06.3)
-    - id: AC-0604
+        An existing TOML missing or conflicting with a reserved hook makes init
+        perform no writes and print the exact manual additions.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        Initialization neither invokes nor mutates Worktrunk approval (the
-        Worktrunk executable is only resolved on `PATH`, never spawned). The
-        real-contract native first-use approval observation is proven by Task
-        15. (spec AC-06.4)
+        After the required hooks are added by hand, a rerun succeeds and leaves
+        the file unrewritten.
+      verifiedBy: case
+
+- id: CONF-FR-0004
+  title: Initialization never touches Worktrunk approval
+  status: active
+  description: >
+    `wtw init` neither invokes nor mutates Worktrunk's native approval state. The
+    Worktrunk executable is only resolved on `PATH`, never spawned during init.
+    The complementary native first-use approval behavior of real Worktrunk is a
+    contract-layer assumption owned by the worktrunk-assumptions domain.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        During init the Worktrunk executable is never spawned and no approval
+        state is mutated.
+      verifiedBy: case

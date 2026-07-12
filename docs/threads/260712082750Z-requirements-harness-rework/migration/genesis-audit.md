@@ -36,44 +36,44 @@ owner rather than leave the row unresolved or quietly delete it.
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-02.1 | Bare `wtw`, root/command help, `-h`, and `--help` print the corresponding help and exit 0. | | [ ] |
-| AC-02.2 | Only `init`, `sync [--open]`, `check` are accepted; every excluded command/flag and unexpected positional exits 1 with exactly one `Error: <message>` line on stderr and empty stdout. | | [ ] |
-| AC-02.3 | `init` and `check` reject every command-specific option; `sync` accepts only `--open`. | | [ ] |
+| AC-02.1 | Bare `wtw`, root/command help, `-h`, and `--help` print the corresponding help and exit 0. | CLI-FR-0001.AC-0001, CLI-FR-0001.AC-0002, CLI-FR-0001.AC-0003, CLI-FR-0001.AC-0004 | [ ] |
+| AC-02.2 | Only `init`, `sync [--open]`, `check` are accepted; every excluded command/flag and unexpected positional exits 1 with exactly one `Error: <message>` line on stderr and empty stdout. | CLI-FR-0002.AC-0001, CLI-FR-0002.AC-0002, CLI-FR-0002.AC-0003 | [ ] |
+| AC-02.3 | `init` and `check` reject every command-specific option; `sync` accepts only `--open`. | CLI-FR-0003.AC-0001, CLI-FR-0003.AC-0002, CLI-FR-0003.AC-0003 | [ ] |
 
 ## Genesis FR-03 — Repository resolution and support boundary
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-03.1 | Every product command runs successfully from primary root, nested primary dir, linked root, and nested linked dir, all resolving the same primary/common Git context. | | [ ] |
-| AC-03.2 | macOS cases cover repository/worktree paths containing spaces without argument splitting or path corruption. | | [ ] |
-| AC-03.3 | A simulated Linux platform reports unverified/best-effort status without claiming suite evidence; bare repos, missing-primary contexts, Windows, and non-repository dirs produce deterministic unsupported/error findings without writes. | | [ ] |
-| AC-03.4 | Repository-shape cases independently fail each primary predicate (bare, absent main record, prunable main record, missing path, mismatched root) without writes; a post-discovery permission failure is reported as an ordinary command failure. | | [ ] |
+| AC-03.1 | Every product command runs successfully from primary root, nested primary dir, linked root, and nested linked dir, all resolving the same primary/common Git context. | REPO-FR-0001.AC-0001, REPO-FR-0001.AC-0002, REPO-FR-0001.AC-0003, REPO-FR-0001.AC-0004 | [ ] |
+| AC-03.2 | macOS cases cover repository/worktree paths containing spaces without argument splitting or path corruption. | REPO-FR-0002.AC-0001 | [ ] |
+| AC-03.3 | A simulated Linux platform reports unverified/best-effort status without claiming suite evidence; bare repos, missing-primary contexts, Windows, and non-repository dirs produce deterministic unsupported/error findings without writes. | REPO-FR-0003.AC-0001 (Linux), REPO-FR-0003.AC-0002 (Windows), REPO-FR-0004.AC-0001 (bare), REPO-FR-0004.AC-0002 (non-repository); missing-primary contexts absorbed by REPO-FR-0004.AC-0003 / AC-0005 | [ ] |
+| AC-03.4 | Repository-shape cases independently fail each primary predicate (bare, absent main record, prunable main record, missing path, mismatched root) without writes; a post-discovery permission failure is reported as an ordinary command failure. | REPO-FR-0004.AC-0001 (bare), REPO-FR-0004.AC-0003 (absent main), REPO-FR-0004.AC-0004 (prunable), REPO-FR-0004.AC-0005 (missing path), REPO-FR-0004.AC-0006 (mismatched root), REPO-FR-0005.AC-0001 (post-discovery permission) | [ ] |
 
 ## Genesis FR-04 — Initialization preflight and idempotency
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-04.1 | Each predictable conflict enumerated by the `init` contract exits 1 and leaves the complete fixture byte-for-byte unchanged. | | [ ] |
-| AC-04.2 | On an empty supported repo, `init` creates exactly the canonical TOML, include, workspace, and managed exclude content, syncs existing linked worktrees, launches no Cursor/approval, and exits 0. | | [ ] |
-| AC-04.3 | Rerunning `init` on healthy setup exits 0, preserves user-authored bytes outside managed regions, and makes no semantic change beyond required reconciliation. | | [ ] |
-| AC-04.4 | An injected post-write filesystem failure exits 1 and reports the writes completed before failure without attempting broad deletion/rollback. | | [ ] |
+| AC-04.1 | Each predictable conflict enumerated by the `init` contract exits 1 and leaves the complete fixture byte-for-byte unchanged. | INIT-FR-0002.AC-0001 (missing dependency), REPO-FR-0004.AC-0001..AC-0006 (OS/shape conflicts), PRIV-FR-0002.AC-0001 (tracked private path), CONF-FR-0003.AC-0001 (reserved-hook conflict); valid-or-absent `.worktreeinclude` and workspace-JSONC conflict variants absorbed by the COPY and WORK domains (see FR-07 / FR-09 rows, Task 9) | [ ] |
+| AC-04.2 | On an empty supported repo, `init` creates exactly the canonical TOML, include, workspace, and managed exclude content, syncs existing linked worktrees, launches no Cursor/approval, and exits 0. | INIT-FR-0001.AC-0001 (canonical scaffold + exit 0); managed-exclude content via PRIV-FR-0001.AC-0001; exact TOML hooks via CONF-FR-0001.AC-0001; linked-worktree sync via the SYNC domain (see FR-08 rows, Task 9); no Cursor launch via the CURSOR domain (see FR-10 rows, Task 9); no approval mutation via CONF-FR-0004.AC-0001 | [ ] |
+| AC-04.3 | Rerunning `init` on healthy setup exits 0, preserves user-authored bytes outside managed regions, and makes no semantic change beyond required reconciliation. | INIT-FR-0003.AC-0001 | [ ] |
+| AC-04.4 | An injected post-write filesystem failure exits 1 and reports the writes completed before failure without attempting broad deletion/rollback. | INIT-FR-0004.AC-0001 | [ ] |
 
 ## Genesis FR-05 — Privacy and local exclude ownership
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-05.1 | `init` creates/reconciles one delimited local-exclude block containing all required private paths while preserving all unrelated `info/exclude` bytes. | | [ ] |
-| AC-05.2 | If any required private path is tracked, `init` performs no writes and `check` emits a `FAIL`; a successful init introduces no tracked repository file. | | [ ] |
-| AC-05.3 | Reconciliation of an existing valid managed block is idempotent and never duplicates its entries. | | [ ] |
+| AC-05.1 | `init` creates/reconciles one delimited local-exclude block containing all required private paths while preserving all unrelated `info/exclude` bytes. | PRIV-FR-0001.AC-0001 | [ ] |
+| AC-05.2 | If any required private path is tracked, `init` performs no writes and `check` emits a `FAIL`; a successful init introduces no tracked repository file. | PRIV-FR-0002.AC-0001 (no writes), PRIV-FR-0002.AC-0002 (check failure), PRIV-FR-0002.AC-0003 (no tracked file) | [ ] |
+| AC-05.3 | Reconciliation of an existing valid managed block is idempotent and never duplicates its entries. | PRIV-FR-0001.AC-0002 | [ ] |
 
 ## Genesis FR-06 — Worktrunk configuration and customization
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-06.1 | A missing `.config/wt.toml` is scaffolded with exact distinct blocking-copy, post-start-sync/open, and post-remove-sync commands. | | [ ] |
-| AC-06.2 | An existing TOML with all reserved hooks is preserved byte-for-byte, including unrelated custom hooks, comments, order, and settings. | | [ ] |
-| AC-06.3 | An existing TOML missing/conflicting with a reserved hook makes `init` perform no writes and print the exact manual additions; after manual correction, rerun succeeds without rewriting it. | | [ ] |
-| AC-06.4 | `init` neither invokes nor mutates Worktrunk approval; the real contract case observes native first-use approval in isolated Worktrunk state. | | [ ] |
+| AC-06.1 | A missing `.config/wt.toml` is scaffolded with exact distinct blocking-copy, post-start-sync/open, and post-remove-sync commands. | CONF-FR-0001.AC-0001 | [ ] |
+| AC-06.2 | An existing TOML with all reserved hooks is preserved byte-for-byte, including unrelated custom hooks, comments, order, and settings. | CONF-FR-0002.AC-0001 | [ ] |
+| AC-06.3 | An existing TOML missing/conflicting with a reserved hook makes `init` perform no writes and print the exact manual additions; after manual correction, rerun succeeds without rewriting it. | CONF-FR-0003.AC-0001 (no writes + manual additions), CONF-FR-0003.AC-0002 (post-correction rerun) | [ ] |
+| AC-06.4 | `init` neither invokes nor mutates Worktrunk approval; the real contract case observes native first-use approval in isolated Worktrunk state. | CONF-FR-0004.AC-0001 (init never spawns Worktrunk / no approval mutation); native first-use approval observation absorbed by the WTA worktrunk-assumptions domain (see FR-06 assumption rows, Task 10/14) | [ ] |
 
 ## Genesis FR-07 — Copy policy
 
@@ -150,7 +150,7 @@ owner rather than leave the row unresolved or quietly delete it.
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-15.1 | Source-run `--version` and `-V` print exactly the CLI package version followed by ` (dev)` and exit 0. | | [ ] |
-| AC-15.2 | A build test injects a known short SHA and the resulting bundle prints exactly `<package-version> (<known-sha>)`; building with no resolvable Git SHA fails clearly. | | [ ] |
-| AC-15.3 | The bundle has a Node shebang, is self-contained, and runs with the supported Node runtime without Bun. | | [ ] |
-| AC-15.4 | Following the documented symlink procedure makes `wtw` available through `PATH`; a rebuild changes its reported embedded SHA without reinstall; removing the symlink removes the command. | | [ ] |
+| AC-15.1 | Source-run `--version` and `-V` print exactly the CLI package version followed by ` (dev)` and exit 0. | VER-FR-0001.AC-0001 (`--version`), VER-FR-0001.AC-0002 (`-V`) | [ ] |
+| AC-15.2 | A build test injects a known short SHA and the resulting bundle prints exactly `<package-version> (<known-sha>)`; building with no resolvable Git SHA fails clearly. | Unreachable from the source-run E2E harness; deferred to the ARCH build domain (Task 10) as a `verifiedBy: unit` AC referencing `packages/cli/test/build.test.ts` | [ ] |
+| AC-15.3 | The bundle has a Node shebang, is self-contained, and runs with the supported Node runtime without Bun. | Unreachable from the source-run E2E harness; deferred to the ARCH build domain (Task 10) as a `verifiedBy: unit` AC referencing `packages/cli/test/build.test.ts` (overlaps genesis AC-01.4) | [ ] |
+| AC-15.4 | Following the documented symlink procedure makes `wtw` available through `PATH`; a rebuild changes its reported embedded SHA without reinstall; removing the symlink removes the command. | Unreachable from the source-run E2E harness; deferred to the ARCH/HARNESS install domain (Task 10) as a `verifiedBy: unit` AC referencing `packages/cli/test/install.test.ts` | [ ] |

@@ -1,44 +1,120 @@
-- id: WTW-FR-0003
-  title: Repository resolution and support boundary
+- id: REPO-FR-0001
+  title: Uniform primary/common context resolution
   status: active
   description: >
     Every product command (`init`, `sync`, `check`) resolves the same
-    primary/common Git context from any supported invocation location — the
-    primary root, a nested primary directory, a linked worktree root, and a
-    nested linked directory — using structured (never shell-split) Git calls, so
-    repository and worktree paths containing spaces survive verbatim. macOS is
-    verified; Linux is allowed but reports unverified/best-effort status without
-    claiming suite evidence; Windows and every other platform are unsupported.
-    Supported repositories are non-bare and satisfy the five-conjunct
-    primary-worktree predicate (non-bare, a present main record, a non-prunable
-    main record, an existing primary path, and repository-root discovery
-    resolving to the primary). An unsupported platform or repository shape is a
-    deterministic, non-mutating finding/error; a post-discovery Git/permission
-    failure is an ordinary command failure.
-  notes: >
-    The exhaustive per-conjunct primary-predicate independence matrix
-    (bare, absent-main, prunable-main, missing-path, mismatched-root) and the
-    post-discovery permission failure are covered by the committed unit suite
-    `packages/cli/test/repo/resolve.test.ts`; the E2E cases here provide
-    representative product-command coverage of each active criterion.
+    primary/common Git context regardless of where it is invoked, using
+    structured (never shell-split) Git calls. The supported invocation locations
+    are the primary root, a nested directory of the primary, a linked worktree
+    root, and a nested directory of a linked worktree.
   acceptance:
-    - id: AC-0301
+    - id: AC-0001
       statement: >
-        Every product command (`init`, `sync`, `check`) invoked from the primary
-        root, a nested primary directory, a linked root, and a nested linked
-        directory resolves the same primary/common Git context. (spec AC-03.1)
-    - id: AC-0302
+        A product command invoked from the primary root resolves the canonical
+        primary/common context and exits 0.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        A repository/worktree path containing spaces resolves without argument
-        splitting or path corruption. (spec AC-03.2)
-    - id: AC-0303
+        A product command invoked from a nested primary directory resolves the
+        canonical primary/common context and exits 0.
+      verifiedBy: case
+    - id: AC-0003
       statement: >
-        A simulated Linux platform reports unverified/best-effort status without
-        claiming suite evidence, while bare, Windows, and non-repository
-        contexts produce deterministic unsupported/error findings without
-        writes. (spec AC-03.3)
-    - id: AC-0304
+        A product command invoked from a linked worktree root resolves the
+        canonical primary/common context and exits 0.
+      verifiedBy: case
+    - id: AC-0004
       statement: >
-        Repository-shape cases fail a primary-support conjunct (e.g. a prunable
-        primary record) without writes, and a post-discovery permission failure
-        is reported as an ordinary command failure. (spec AC-03.4)
+        A product command invoked from a nested linked-worktree directory
+        resolves the canonical primary/common context and exits 0.
+      verifiedBy: case
+
+- id: REPO-FR-0002
+  title: Whitespace-safe repository paths
+  status: active
+  description: >
+    Because Git is invoked with structured arguments rather than a shell split,
+    repository and worktree paths that contain spaces survive verbatim through
+    resolution and command execution.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A repository whose worktree path contains spaces resolves without
+        argument splitting or path corruption and the command exits 0.
+      verifiedBy: case
+
+- id: REPO-FR-0003
+  title: Platform support boundary
+  status: active
+  description: >
+    macOS is the verified platform. Linux is allowed but best-effort: it reports
+    unverified status without claiming test-suite evidence. Windows and every
+    other platform are unsupported and produce a deterministic, non-mutating
+    finding.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        On a simulated Linux platform the run reports unverified best-effort
+        status without claiming test-suite evidence.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        On a simulated Windows platform the run reports a deterministic
+        unsupported finding and writes nothing.
+      verifiedBy: case
+
+- id: REPO-FR-0004
+  title: Repository-shape support boundary
+  status: active
+  description: >
+    A supported repository is non-bare and satisfies the primary-worktree
+    predicate: a present main worktree record, a non-prunable main record, an
+    existing primary path, and repository-root discovery resolving to the
+    primary. A repository that fails any conjunct, a bare repository, and a
+    non-repository directory each produce a deterministic finding or error and
+    leave the tree unwritten.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A bare repository produces a deterministic unsupported finding and
+        writes nothing.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        A non-repository directory produces a deterministic error and writes
+        nothing.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        A repository whose main worktree record is absent is rejected and writes
+        nothing.
+      verifiedBy: case
+    - id: AC-0004
+      statement: >
+        A repository whose main worktree record is prunable is rejected and
+        writes nothing.
+      verifiedBy: case
+    - id: AC-0005
+      statement: >
+        A repository whose primary worktree path is missing is rejected and
+        writes nothing.
+      verifiedBy: case
+    - id: AC-0006
+      statement: >
+        A repository whose root discovery does not resolve to the primary is
+        rejected and writes nothing.
+      verifiedBy: case
+
+- id: REPO-FR-0005
+  title: Post-discovery failures are ordinary command failures
+  status: active
+  description: >
+    A support finding is a pre-write, non-mutating judgment about the platform
+    and repository shape. Once discovery succeeds, a later Git or permission
+    failure is not a support finding but an ordinary command failure.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A permission failure encountered after successful discovery is reported
+        as an ordinary command failure with exit 1.
+      verifiedBy: case

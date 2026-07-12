@@ -1,25 +1,76 @@
-- id: WTW-FR-0002
-  title: CLI surface and error envelope
+- id: CLI-FR-0001
+  title: Help and default output
   status: active
   description: >
-    The complete public command surface is `wtw`, `wtw init`, `wtw sync
-    [--open]`, `wtw check`, `wtw help [command]`, `wtw -h|--help`, and `wtw
-    -V|--version`. Help and version paths exit 0; every excluded command,
-    excluded option, and unexpected positional argument exits 1 with exactly one
-    `Error: <message>` line on stderr and empty stdout.
+    The public command surface is `wtw`, `wtw init`, `wtw sync [--open]`, `wtw
+    check`, `wtw help [command]`, `wtw -h|--help`, and `wtw -V|--version`. The
+    help and default-output paths are informational and always exit 0: a bare
+    invocation and every help form print the corresponding help text on stdout.
   acceptance:
-    - id: AC-0201
+    - id: AC-0001
       statement: >
-        Bare `wtw`, root help, command help, `-h`, and `--help` print the
-        corresponding help text and exit 0. (spec AC-02.1)
-    - id: AC-0202
+        A bare `wtw` invocation prints the root help text on stdout and exits 0.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        Only `init`, `sync [--open]`, and `check` are accepted product commands;
-        every excluded command or option and every unexpected positional
-        argument exits 1 with exactly one `Error: <message>` line on stderr and
-        empty stdout. (spec AC-02.2)
-    - id: AC-0203
+        `wtw --help` prints the root help text on stdout and exits 0.
+      verifiedBy: case
+    - id: AC-0003
       statement: >
-        `init` and `check` reject every command-specific option and `sync`
-        accepts only `--open`; a rejected option exits 1 with one `Error:` line
-        on stderr and empty stdout. (spec AC-02.3)
+        `wtw -h` prints the root help text on stdout and exits 0.
+      verifiedBy: case
+    - id: AC-0004
+      statement: >
+        A command-scoped help invocation prints that command's help text on
+        stdout and exits 0.
+      verifiedBy: case
+
+- id: CLI-FR-0002
+  title: Rejection of unrecognized input
+  status: active
+  description: >
+    Only `init`, `sync [--open]`, and `check` are accepted product commands.
+    Every excluded command, every excluded option, and every unexpected
+    positional argument is rejected through the single error envelope: exit code
+    1, exactly one `Error: <message>` line on stderr, and empty stdout.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        An unrecognized command exits 1 with exactly one `Error:` line on stderr
+        and empty stdout.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        An unrecognized top-level flag exits 1 with exactly one `Error:` line on
+        stderr and empty stdout.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        An unexpected positional argument exits 1 with exactly one `Error:` line
+        on stderr and empty stdout.
+      verifiedBy: case
+
+- id: CLI-FR-0003
+  title: Command-specific option rejection
+  status: active
+  description: >
+    Each product command constrains its own options: `init` and `check` accept
+    no command-specific options, and `sync` accepts only `--open`. A rejected
+    option is reported through the standard error envelope (exit 1, one `Error:`
+    line on stderr, empty stdout).
+  acceptance:
+    - id: AC-0001
+      statement: >
+        `wtw init` given a foreign option exits 1 with exactly one `Error:` line
+        on stderr.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        `wtw sync` given an option other than `--open` exits 1 with exactly one
+        `Error:` line on stderr.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        `wtw check` given a command-specific option exits 1 with exactly one
+        `Error:` line on stderr.
+      verifiedBy: case

@@ -1,27 +1,44 @@
-- id: WTW-FR-0005
-  title: Privacy and local exclude ownership
+- id: PRIV-FR-0001
+  title: Managed local-exclude block
   status: active
   description: >
-    The canonical local artifacts (`.config/wt.toml`, `.worktreeinclude`, and
-    the primary `<repo>.code-workspace`) are private per-clone automation kept
-    out of commits through a single delimited, idempotently managed block in the
-    shared `<git-common-dir>/info/exclude`, covering exactly those paths and
-    preserving all unrelated bytes. Because a local exclude cannot hide a file
-    Git already tracks, any required private path that is tracked is a privacy
-    conflict: `init` performs no writes. Reconciling an existing valid managed
-    block never duplicates its entries.
+    The canonical local artifacts (`.config/wt.toml`, `.worktreeinclude`, and the
+    primary `<repo>.code-workspace`) are private per-clone automation kept out of
+    commits through a single delimited, idempotently managed block in the shared
+    `<git-common-dir>/info/exclude`. The block covers exactly the canonical
+    private paths and preserves all unrelated bytes; reconciling an existing
+    valid block never duplicates its entries.
   acceptance:
-    - id: AC-0501
+    - id: AC-0001
       statement: >
-        Initialization creates/reconciles one delimited local-exclude block
-        containing all required private paths while preserving all unrelated
-        `info/exclude` bytes. (spec AC-05.1)
-    - id: AC-0502
+        Initialization writes one delimited managed block containing all required
+        private paths and preserves all unrelated `info/exclude` bytes.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        If any required private path is tracked by Git, `init` performs no
-        writes and introduces no tracked repository file. The complementary
-        `check` FAIL is proven by `wtw check` (Task 13). (spec AC-05.2)
-    - id: AC-0503
+        Reconciling an already-valid managed block adds no duplicate entries.
+      verifiedBy: case
+
+- id: PRIV-FR-0002
+  title: Tracked private paths are a privacy conflict
+  status: active
+  description: >
+    A local exclude cannot hide a file Git already tracks, so any required
+    private path that is tracked is a privacy conflict. On such a conflict `init`
+    performs no writes, `check` reports the conflict as a failure, and a
+    successful initialization never introduces a newly tracked repository file.
+  acceptance:
+    - id: AC-0001
       statement: >
-        Reconciliation of an existing valid managed block is idempotent and
-        never duplicates its entries. (spec AC-05.3)
+        When a required private path is already tracked by Git, init performs no
+        writes.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        When a required private path is already tracked by Git, check reports a
+        failure.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        A successful initialization introduces no newly tracked repository file.
+      verifiedBy: case

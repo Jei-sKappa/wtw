@@ -1,30 +1,22 @@
-- id: WTW-FR-0015
-  title: Version, build, and local use
+- id: VER-FR-0001
+  title: Source-run version identity
   status: active
   description: >
-    The CLI reports its identity through `--version`/`-V`. A source or test run
-    prints exactly the CLI package version followed by ` (dev)`; a bundled build
-    prints `<version> (<short-sha>)`.
-  notes: >
-    The build-SHA form (`<version> (<short sha>)`, spec AC-15.2) and the
-    Node-bundle/symlink-install criteria (spec AC-15.3, AC-15.4) are produced
-    only from a bundled build where `WTW_GIT_SHA` is injected. They are not
-    reachable from the source-run fast E2E harness (which never builds a bundle),
-    so — following the FR-10 AC-10.4 precedent for criteria unreachable from the
-    fast suite — they are not declared as automated acceptance criteria here (that
-    would make the fast-harness traceability gate demand a fast E2E case that
-    cannot exist). Their evidence is build/install integration tests run by
-    `bun run test`: spec AC-15.2 (known-SHA bundle prints
-    `<version> (<sha>)`; a build with no resolvable SHA fails clearly) and spec
-    AC-15.3/AC-01.4 (Node shebang first line, self-contained, runs under Node with
-    no Bun on PATH) are established by `packages/cli/test/build.test.ts`; spec
-    AC-15.4 (the documented `~/.local/bin/wtw` symlink exposes the command on
-    PATH, a rebuild changes the reported SHA without reinstall, and removing the
-    symlink removes the command) is established by
-    `packages/cli/test/install.test.ts`. Task 16 traceability treats these as
-    covered because they are not active acceptance entries in this manifest.
+    The CLI reports its identity through `--version` and `-V`. A source or test
+    run (not a bundled build) prints exactly the CLI package version followed by
+    the ` (dev)` marker and exits 0. The bundled-build identity forms
+    (embedded short SHA, Node shebang, self-contained bundle, symlink install)
+    are inherently unreachable from the source-run E2E harness and are owned by
+    the architecture and harness domains, evidenced by the build and install
+    unit suites.
   acceptance:
-    - id: AC-1501
+    - id: AC-0001
       statement: >
-        Source-run `--version` and `-V` print exactly the CLI package version
-        followed by ` (dev)` and exit 0. (spec AC-15.1)
+        A source-run `wtw --version` prints the package version followed by
+        ` (dev)` and exits 0.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        A source-run `wtw -V` prints the package version followed by ` (dev)`
+        and exits 0.
+      verifiedBy: case
