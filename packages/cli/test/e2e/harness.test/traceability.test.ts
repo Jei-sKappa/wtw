@@ -25,7 +25,7 @@ const requirements: Requirement[] = [baseRequirement];
 
 const baseCase: CaseManifest = {
   id: "bare-invocation",
-  covers: ["WTW-FR-0002.AC-0201", "WTW-FR-0002.AC-0202"],
+  covers: "WTW-FR-0002.AC-0201",
   title: "Bare invocation",
   description: "Runs the bare CLI.",
   cwd: ".",
@@ -46,7 +46,7 @@ describe("validateTraceability", () => {
   it("rejects uncovered active acceptance criteria", () => {
     expect(() =>
       validateTraceability(requirements, [
-        { ...baseCase, covers: ["WTW-FR-0002.AC-0201"] },
+        { ...baseCase, covers: "WTW-FR-0002.AC-0201" },
       ]),
     ).toThrow(/uncovered acceptance criterion WTW-FR-0002.AC-0202/);
   });
@@ -54,13 +54,13 @@ describe("validateTraceability", () => {
   it("rejects missing requirement and missing acceptance references", () => {
     expect(() =>
       validateTraceability(requirements, [
-        { ...baseCase, covers: ["WTW-FR-0099.AC-0201"] },
+        { ...baseCase, covers: "WTW-FR-0099.AC-0201" },
       ]),
     ).toThrow(/covers missing requirement WTW-FR-0099/);
 
     expect(() =>
       validateTraceability(requirements, [
-        { ...baseCase, covers: ["WTW-FR-0002.AC-9999"] },
+        { ...baseCase, covers: "WTW-FR-0002.AC-9999" },
       ]),
     ).toThrow(/covers missing acceptance criterion WTW-FR-0002.AC-9999/);
   });

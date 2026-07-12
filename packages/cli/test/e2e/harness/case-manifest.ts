@@ -7,6 +7,7 @@ const ACCEPTANCE_REF_PATTERN = /^[A-Z]+-FR-\d{4}\.AC-\d{4}$/;
 const CASE_FIELDS = new Set([
   "id",
   "covers",
+  "checkpoints",
   "title",
   "description",
   "mode",
@@ -17,6 +18,7 @@ const CASE_FIELDS = new Set([
   "setup",
   "expect",
 ]);
+const CHECKPOINT_FIELDS = new Set(["id", "title", "description", "covers"]);
 
 // Which labelled suite owns a case and how it is verified. `fast` (the default
 // when omitted) runs through the generic runner in fast mode against the source
@@ -101,9 +103,29 @@ export type SetupRunStep = {
 /** One ordered setup pre-step: exactly a `cli:`, `cp:`, or `run:` step. */
 export type SetupStep = SetupCliStep | SetupCpStep | SetupRunStep;
 
+/**
+ * One named checkpoint declared by a `scenario` case. A scenario's ordered,
+ * background-hook-driven proof cannot be expressed as a single covered AC, so
+ * instead of a case-level `covers` it declares the criteria it demonstrates as
+ * a list of checkpoints — each a kebab-case `id`, a human `title`/`description`,
+ * and exactly one `covers` compound acceptance-criterion ref. The scenario test
+ * (Task 14) asserts each checkpoint is reached; the living-doc renderer (Task 6)
+ * and traceability (Task 5) consume the declarations.
+ */
+export type Checkpoint = {
+  id: string;
+  title: string;
+  description: string;
+  covers: string;
+};
+
 export type CaseManifest = {
   id: string;
-  covers: string[];
+  /** The single acceptance criterion a `fast`/`contract` case covers; absent on
+   * `scenario` cases (which declare per-checkpoint coverage instead). */
+  covers?: string;
+  /** The named checkpoints a `scenario` case declares; absent on other modes. */
+  checkpoints?: Checkpoint[];
   title: string;
   description: string;
   mode?: CaseMode;
@@ -355,6 +377,55 @@ function validateRunStep(
   return { run };
 }
 
+/**
+ * Validate a `scenario` case's `checkpoints` list: a non-empty array of strict
+ * `{ id, title, description, covers }` mappings. Ids are kebab-case (the case-id
+ * pattern) and unique within the case; each `covers` is a single compound
+ * acceptance-criterion ref and no two checkpoints may cover the same ref.
+ */
+function validateCheckpoints(
+  value: unknown,
+  caseId: string,
+  source: Source,
+): Checkpoint[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    fail(source, `${caseId}.checkpoints must be a non-empty array.`);
+  }
+  const seenIds = new Set<string>();
+  const seenCovers = new Set<string>();
+  return value.map((entry, index) => {
+    const where = `${caseId}.checkpoints[${index}]`;
+    if (!isRecord(entry)) fail(source, `${where} must be a mapping.`);
+    rejectUnknownFields(entry, CHECKPOINT_FIELDS, "checkpoint", source);
+    const id = requireString(entry.id, `${where}.id`, source);
+    if (!CASE_ID_PATTERN.test(id)) {
+      fail(source, `${where}.id must be kebab-case: ${id}`);
+    }
+    if (seenIds.has(id)) {
+      fail(source, `${caseId}.checkpoints contains duplicate id ${id}`);
+    }
+    seenIds.add(id);
+    const title = requireString(entry.title, `${where}.title`, source);
+    const description = requireString(
+      entry.description,
+      `${where}.description`,
+      source,
+    );
+    const covers = requireString(entry.covers, `${where}.covers`, source);
+    if (!ACCEPTANCE_REF_PATTERN.test(covers)) {
+      fail(source, `${where}.covers must be an acceptance criterion ref.`);
+    }
+    if (seenCovers.has(covers)) {
+      fail(
+        source,
+        `${caseId}.checkpoints contains duplicate covers ref ${covers}`,
+      );
+    }
+    seenCovers.add(covers);
+    return { id, title, description, covers };
+  });
+}
+
 export function validateCaseManifest(
   value: unknown,
   source: Source,
@@ -364,36 +435,10 @@ export function validateCaseManifest(
   const id = requireString(value.id, "id", source);
   if (!CASE_ID_PATTERN.test(id)) fail(source, `invalid case id ${id}`);
 
-  if (!Array.isArray(value.covers) || value.covers.length === 0) {
-    fail(source, `${id}.covers must be a non-empty string array.`);
-  }
-  const seenCovers = new Set<string>();
-  const covers = value.covers.map((item, index) => {
-    if (typeof item !== "string" || item.length === 0) {
-      fail(source, `${id}.covers[${index}] must be a non-empty string.`);
-    }
-    if (!ACCEPTANCE_REF_PATTERN.test(item)) {
-      fail(
-        source,
-        `${id}.covers[${index}] must be an acceptance criterion ref.`,
-      );
-    }
-    if (seenCovers.has(item))
-      fail(source, `${id}.covers contains duplicate ref ${item}`);
-    seenCovers.add(item);
-    return item;
-  });
-
-  const title = requireString(value.title, `${id}.title`, source);
-  const description = requireString(
-    value.description,
-    `${id}.description`,
-    source,
-  );
-
   // `mode` is optional; an omitted mode means the default `fast` suite. Only
   // contract/scenario cases declare it. An unknown value is rejected so the
-  // strict schema never silently mis-routes a case.
+  // strict schema never silently mis-routes a case. It is resolved first because
+  // the `covers`/`checkpoints` contract depends on the effective mode.
   let mode: CaseMode | undefined;
   if (value.mode !== undefined) {
     if (typeof value.mode !== "string" || !CASE_MODE_SET.has(value.mode)) {
@@ -404,6 +449,39 @@ export function validateCaseManifest(
     }
     mode = value.mode as CaseMode;
   }
+  const effectiveMode: CaseMode = mode ?? "fast";
+
+  // Coverage is declared one of two mutually exclusive ways, gated on mode. A
+  // `fast`/`contract` case covers exactly one acceptance criterion via a scalar
+  // `covers` ref (a list is rejected). A `scenario` case declares no case-level
+  // `covers` at all; it carries a non-empty `checkpoints` list instead, each
+  // checkpoint naming the one criterion it demonstrates.
+  let covers: string | undefined;
+  let checkpoints: Checkpoint[] | undefined;
+  if (effectiveMode === "scenario") {
+    if (value.covers !== undefined) {
+      fail(
+        source,
+        `${id}.covers is forbidden on scenario cases; declare per-checkpoint coverage instead.`,
+      );
+    }
+    checkpoints = validateCheckpoints(value.checkpoints, id, source);
+  } else {
+    if (value.checkpoints !== undefined) {
+      fail(source, `${id}.checkpoints is only allowed on scenario cases.`);
+    }
+    covers = requireString(value.covers, `${id}.covers`, source);
+    if (!ACCEPTANCE_REF_PATTERN.test(covers)) {
+      fail(source, `${id}.covers must be an acceptance criterion ref.`);
+    }
+  }
+
+  const title = requireString(value.title, `${id}.title`, source);
+  const description = requireString(
+    value.description,
+    `${id}.description`,
+    source,
+  );
   // `cwd` is optional: cases run from the project root by default (the 99%
   // scenario a real user is in). The rare case that needs to exercise running
   // from a nested or linked worktree directory can still set it explicitly.
@@ -532,7 +610,8 @@ export function validateCaseManifest(
 
   return {
     id,
-    covers,
+    ...(covers === undefined ? {} : { covers }),
+    ...(checkpoints === undefined ? {} : { checkpoints }),
     title,
     description,
     ...(mode === undefined ? {} : { mode }),

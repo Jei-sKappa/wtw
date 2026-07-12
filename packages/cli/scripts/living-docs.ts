@@ -284,7 +284,9 @@ export async function loadRenderCases(root: string): Promise<RenderCase[]> {
       evidence: caseEvidence(manifest),
       cwd: manifest.cwd,
       command: manifest.command,
-      covers: manifest.covers,
+      // Scalar `covers` lifted into the render list; scenario checkpoints are
+      // wired into the renderer by the Task 6 rework.
+      covers: manifest.covers === undefined ? [] : [manifest.covers],
       setupSteps: manifest.setup.map(describeSetupStep),
       exitCode: manifest.expect.exitCode,
       stdout: await readStream(

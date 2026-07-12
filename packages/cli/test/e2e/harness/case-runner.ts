@@ -58,7 +58,7 @@ const SUBSTITUTIONS: Record<
 };
 
 function context(testCase: CaseManifest, field: string): string {
-  return `[${testCase.id}] covers ${testCase.covers.join(", ")} ${field}`;
+  return `[${testCase.id}] covers ${testCase.covers ?? "(scenario)"} ${field}`;
 }
 
 /**

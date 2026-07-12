@@ -41,7 +41,11 @@ export function validateTraceability(
 
   const covered = new Set<string>();
   for (const testCase of cases) {
-    for (const ref of testCase.covers) {
+    // Scalar `covers` (fast/contract cases); scenario checkpoints are folded in
+    // by the Task 5 rework — treated here as a zero-or-one list to stay shape-
+    // compatible with the new scalar schema without changing behavior.
+    const refs = testCase.covers === undefined ? [] : [testCase.covers];
+    for (const ref of refs) {
       const { requirementId, acceptanceId } = splitRef(ref);
       const requirement = requirementsById.get(requirementId);
       if (requirement === undefined) {
