@@ -15,7 +15,7 @@ import path from "node:path";
 //      shell strings Worktrunk runs for its hooks (`wt step copy-ignored`,
 //      `wtw sync --open`) resolve to exactly these executables.
 
-/** The exact Worktrunk version the contract suite is pinned to (spec AC-12.2). */
+/** The exact Worktrunk version the contract suite is pinned to. */
 export const PINNED_WORKTRUNK_VERSION = "0.67.0";
 
 /** The fake Cursor shim, relative to the CLI package root (`repoRoot`). */

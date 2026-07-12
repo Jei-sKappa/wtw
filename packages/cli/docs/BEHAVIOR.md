@@ -4,81 +4,196 @@
 
 Living documentation generated from the functional requirements in
 `packages/cli/requirements/functional/` and the end-to-end cases in
-`packages/cli/test/e2e/cases/`. Every example below is the expected output
-asserted by the e2e suite, so a passing gate (`bun run test:e2e` for fast
-cases, `bun run test:contract` for the external-contract suite) is also
-proof this document is accurate.
+`packages/cli/test/e2e/cases/`. Every acceptance criterion below shows its
+own single piece of evidence — a dedicated case, a named scenario
+checkpoint, a named unit-test file, or a named manual checklist step — so a
+passing gate (`bun run test:e2e` for fast cases, `bun run test:contract` for
+the external-contract suite) is also proof this document is accurate.
 
-**13** requirements · **45** acceptance criteria · **62** end-to-end cases.
+**55** requirements · **114** acceptance criteria · **79** end-to-end cases · **10** scenario checkpoints.
 
-Each case declares its **dependency mode** and, per external dependency,
-whether it is wired to the **Real** genuine binary, a **Simulated** declared
-fake shim, or **Not exercised** (the dependency is not wired into the case —
-a pure surface case, or a Worktrunk scenario modelled with raw Git so no
-`wt` binary runs). Simulated evidence is never real lifecycle proof:
-real-Worktrunk evidence comes only from the external-contract suite, so the
-verified Worktrunk range `>=0.67.0 <0.68.0` is represented as supported
-solely because that suite passes against the pinned real v0.67.0 binary
-(see `WTW-FR-0012`).
+Each case (and scenario checkpoint) declares its **dependency mode** and,
+per external dependency, whether it is wired to the **Real** genuine binary,
+a **Simulated** declared fake shim, or **Not exercised** (the dependency is
+not wired into the case — a pure surface case, or a Worktrunk scenario
+modelled with raw Git so no `wt` binary runs). Simulated evidence is never
+real lifecycle proof: real-Worktrunk evidence comes only from the
+external-contract suite, so the verified Worktrunk range `>=0.67.0 <0.68.0`
+is represented as supported solely because that suite passes against the
+pinned real v0.67.0 binary (see the `COMPAT` compatibility requirements).
 
 ## Contents
 
+- [Architecture](#architecture)
+  - [ARCH-FR-0001 — Workspace shape and core purity](#arch-fr-0001--workspace-shape-and-core-purity)
+  - [ARCH-FR-0002 — Bundled Node runtime identity](#arch-fr-0002--bundled-node-runtime-identity)
+  - [ARCH-FR-0003 — Local symlink install](#arch-fr-0003--local-symlink-install)
+
 - [Cli Surface](#cli-surface)
-  - [WTW-FR-0002 — CLI surface and error envelope](#wtw-fr-0002--cli-surface-and-error-envelope)
+  - [CLI-FR-0001 — Help and default output](#cli-fr-0001--help-and-default-output)
+  - [CLI-FR-0002 — Rejection of unrecognized input](#cli-fr-0002--rejection-of-unrecognized-input)
+  - [CLI-FR-0003 — Command-specific option rejection](#cli-fr-0003--command-specific-option-rejection)
 
 - [Repository](#repository)
-  - [WTW-FR-0003 — Repository resolution and support boundary](#wtw-fr-0003--repository-resolution-and-support-boundary)
+  - [REPO-FR-0001 — Uniform primary/common context resolution](#repo-fr-0001--uniform-primarycommon-context-resolution)
+  - [REPO-FR-0002 — Whitespace-safe repository paths](#repo-fr-0002--whitespace-safe-repository-paths)
+  - [REPO-FR-0003 — Platform support boundary](#repo-fr-0003--platform-support-boundary)
+  - [REPO-FR-0004 — Repository-shape support boundary](#repo-fr-0004--repository-shape-support-boundary)
+  - [REPO-FR-0005 — Post-discovery failures are ordinary command failures](#repo-fr-0005--post-discovery-failures-are-ordinary-command-failures)
 
 - [Init](#init)
-  - [WTW-FR-0004 — Initialization preflight and idempotency](#wtw-fr-0004--initialization-preflight-and-idempotency)
+  - [INIT-FR-0001 — Clean initialization of an empty repository](#init-fr-0001--clean-initialization-of-an-empty-repository)
+  - [INIT-FR-0002 — Dependency preflight writes nothing on conflict](#init-fr-0002--dependency-preflight-writes-nothing-on-conflict)
+  - [INIT-FR-0003 — Idempotent rerun on a healthy setup](#init-fr-0003--idempotent-rerun-on-a-healthy-setup)
+  - [INIT-FR-0004 — Crash safety on mid-write failure](#init-fr-0004--crash-safety-on-mid-write-failure)
 
 - [Privacy](#privacy)
-  - [WTW-FR-0005 — Privacy and local exclude ownership](#wtw-fr-0005--privacy-and-local-exclude-ownership)
+  - [PRIV-FR-0001 — Managed local-exclude block](#priv-fr-0001--managed-local-exclude-block)
+  - [PRIV-FR-0002 — Tracked private paths are a privacy conflict](#priv-fr-0002--tracked-private-paths-are-a-privacy-conflict)
 
 - [Worktrunk Config](#worktrunk-config)
-  - [WTW-FR-0006 — Worktrunk configuration and customization](#wtw-fr-0006--worktrunk-configuration-and-customization)
+  - [CONF-FR-0001 — Scaffolding a missing wt.toml](#conf-fr-0001--scaffolding-a-missing-wttoml)
+  - [CONF-FR-0002 — Preserving an existing compatible TOML](#conf-fr-0002--preserving-an-existing-compatible-toml)
+  - [CONF-FR-0003 — Reserved-hook conflict handling](#conf-fr-0003--reserved-hook-conflict-handling)
+  - [CONF-FR-0004 — Initialization never touches Worktrunk approval](#conf-fr-0004--initialization-never-touches-worktrunk-approval)
 
 - [Copy Policy](#copy-policy)
-  - [WTW-FR-0007 — Copy policy](#wtw-fr-0007--copy-policy)
+  - [COPY-FR-0001 — Scaffolding the copy policy](#copy-fr-0001--scaffolding-the-copy-policy)
+  - [COPY-FR-0002 — Copy-policy diagnostics](#copy-fr-0002--copy-policy-diagnostics)
 
 - [Sync](#sync)
-  - [WTW-FR-0008 — Synchronization and concurrency](#wtw-fr-0008--synchronization-and-concurrency)
+  - [SYNC-FR-0001 — Control-file propagation](#sync-fr-0001--control-file-propagation)
+  - [SYNC-FR-0002 — Copy scope limited to control files](#sync-fr-0002--copy-scope-limited-to-control-files)
+  - [SYNC-FR-0003 — Concurrency serialization](#sync-fr-0003--concurrency-serialization)
+  - [SYNC-FR-0004 — Lock lifecycle and recovery](#sync-fr-0004--lock-lifecycle-and-recovery)
+  - [SYNC-FR-0005 — Repair of raw-Git drift](#sync-fr-0005--repair-of-raw-git-drift)
 
 - [Cursor Workspace](#cursor-workspace)
-  - [WTW-FR-0009 — Cursor workspace preservation and reconciliation](#wtw-fr-0009--cursor-workspace-preservation-and-reconciliation)
+  - [WORK-FR-0001 — Workspace creation and adoption at init](#work-fr-0001--workspace-creation-and-adoption-at-init)
+  - [WORK-FR-0002 — Surgical folders edit on sync](#work-fr-0002--surgical-folders-edit-on-sync)
+  - [WORK-FR-0003 — Invalid-JSONC guard](#work-fr-0003--invalid-jsonc-guard)
+  - [WORK-FR-0004 — Deterministic folder-list reconciliation](#work-fr-0004--deterministic-folder-list-reconciliation)
+  - [WORK-FR-0005 — Missing and prunable registrations](#work-fr-0005--missing-and-prunable-registrations)
+  - [WORK-FR-0006 — Recreating a missing workspace on sync](#work-fr-0006--recreating-a-missing-workspace-on-sync)
 
 - [Cursor Launch](#cursor-launch)
-  - [WTW-FR-0010 — Cursor launch behavior](#wtw-fr-0010--cursor-launch-behavior)
+  - [CURSOR-FR-0001 — Commands that never launch Cursor](#cursor-fr-0001--commands-that-never-launch-cursor)
+  - [CURSOR-FR-0002 — Launch on sync --open](#cursor-fr-0002--launch-on-sync---open)
+  - [CURSOR-FR-0003 — Launch failure after writes](#cursor-fr-0003--launch-failure-after-writes)
+  - [CURSOR-FR-0004 — Real Cursor open and focus](#cursor-fr-0004--real-cursor-open-and-focus)
 
 - [Diagnostics](#diagnostics)
-  - [WTW-FR-0011 — Diagnostics](#wtw-fr-0011--diagnostics)
+  - [CHECK-FR-0001 — Healthy aggregate report](#check-fr-0001--healthy-aggregate-report)
+  - [CHECK-FR-0002 — Severity-driven exit code](#check-fr-0002--severity-driven-exit-code)
+  - [CHECK-FR-0003 — Skipped dependent checks](#check-fr-0003--skipped-dependent-checks)
+  - [CHECK-FR-0004 — Read-only guarantee](#check-fr-0004--read-only-guarantee)
 
 - [Compatibility](#compatibility)
-  - [WTW-FR-0012 — Worktrunk compatibility](#wtw-fr-0012--worktrunk-compatibility)
+  - [COMPAT-FR-0001 — Worktrunk version evaluation](#compat-fr-0001--worktrunk-version-evaluation)
 
-- [Lifecycle](#lifecycle)
-  - [WTW-FR-0013 — Lifecycle integration](#wtw-fr-0013--lifecycle-integration)
+- [Worktrunk Assumptions](#worktrunk-assumptions)
+  - [WTA-FR-0001 — Native worktree-creation approval](#wta-fr-0001--native-worktree-creation-approval)
+  - [WTA-FR-0002 — Blocking pre-start copy before readiness](#wta-fr-0002--blocking-pre-start-copy-before-readiness)
+  - [WTA-FR-0003 — Primary-authoritative copy source](#wta-fr-0003--primary-authoritative-copy-source)
+  - [WTA-FR-0004 — Background post-start reconciliation](#wta-fr-0004--background-post-start-reconciliation)
+  - [WTA-FR-0005 — Background post-remove reconciliation](#wta-fr-0005--background-post-remove-reconciliation)
+  - [WTA-FR-0006 — Real binary version reporting](#wta-fr-0006--real-binary-version-reporting)
+
+- [Harness](#harness)
+  - [HARNESS-FR-0001 — Requirement manifest schema strictness](#harness-fr-0001--requirement-manifest-schema-strictness)
+  - [HARNESS-FR-0002 — Case manifest schema strictness](#harness-fr-0002--case-manifest-schema-strictness)
+  - [HARNESS-FR-0003 — Single traceability authority](#harness-fr-0003--single-traceability-authority)
+  - [HARNESS-FR-0004 — Living behavior document generation and drift](#harness-fr-0004--living-behavior-document-generation-and-drift)
+  - [HARNESS-FR-0005 — Aggregate verification gate](#harness-fr-0005--aggregate-verification-gate)
 
 - [Version](#version)
-  - [WTW-FR-0015 — Version, build, and local use](#wtw-fr-0015--version-build-and-local-use)
+  - [VER-FR-0001 — Source-run version identity](#ver-fr-0001--source-run-version-identity)
+
+## Architecture
+
+### ARCH-FR-0001 — Workspace shape and core purity
+
+wtw is a private Bun workspace with exactly two packages: the pure domain package `@wtw/core` and the effectful `@wtw/cli`, which consumes core through a workspace dependency. Core stays pure: it imports no CLI, process-argument, subprocess, terminal-output, or filesystem-effect surface. Formatting, linting, strict type checking, and tests all run through the repository's root aggregate scripts. These architecture invariants are unreachable from the source-run E2E harness, so each is proven by a named unit test.
+
+#### ARCH-FR-0001.AC-0001 — verified by `unit` (a named unit-test file)
+
+The domain package imports no command-line, process-argument, subprocess, terminal-output, or filesystem-effect module.
+
+Proven by unit test `packages/core/test/dependency-boundary.test.ts`.
+
+#### ARCH-FR-0001.AC-0002 — verified by `unit` (a named unit-test file)
+
+The repository declares a two-package Bun workspace whose CLI package depends on the domain package through the workspace protocol.
+
+Proven by unit test `packages/cli/test/toolchain.test.ts`.
+
+#### ARCH-FR-0001.AC-0003 — verified by `unit` (a named unit-test file)
+
+Formatting, linting, type checking, and tests are wired through the repository's root aggregate scripts.
+
+Proven by unit test `packages/cli/test/toolchain.test.ts`.
+
+### ARCH-FR-0002 — Bundled Node runtime identity
+
+`bun run build` produces a self-contained Node bundle with a Node shebang that runs under the supported Node runtime with no Bun present, embedding the resolved short Git commit as part of its reported version. A build that cannot resolve a commit aborts rather than emitting a bundle. These build-time facts are unobservable from the source-run E2E harness and are proven by the build unit test.
+
+#### ARCH-FR-0002.AC-0001 — verified by `unit` (a named unit-test file)
+
+The built bundle carries a Node shebang and runs under Node with no Bun on the path.
+
+Proven by unit test `packages/cli/test/build.test.ts`.
+
+#### ARCH-FR-0002.AC-0002 — verified by `unit` (a named unit-test file)
+
+The built bundle contains no unresolved domain-package or relative runtime import.
+
+Proven by unit test `packages/cli/test/build.test.ts`.
+
+#### ARCH-FR-0002.AC-0003 — verified by `unit` (a named unit-test file)
+
+An injected short commit hash appears in the built bundle's reported version output.
+
+Proven by unit test `packages/cli/test/build.test.ts`.
+
+#### ARCH-FR-0002.AC-0004 — verified by `unit` (a named unit-test file)
+
+A build that cannot resolve a Git commit fails clearly instead of emitting a bundle.
+
+Proven by unit test `packages/cli/test/build.test.ts`.
+
+### ARCH-FR-0003 — Local symlink install
+
+The documented local-use flow exposes `wtw` through a symlink from a path directory to the built bundle. A rebuild in place changes the reported embedded commit without touching the symlink, and removing the symlink removes the command. This install identity is unreachable from the source-run E2E harness and is proven by the install unit test.
+
+#### ARCH-FR-0003.AC-0001 — verified by `unit` (a named unit-test file)
+
+A symlink from a path directory to the built bundle exposes the command through the path.
+
+Proven by unit test `packages/cli/test/install.test.ts`.
+
+#### ARCH-FR-0003.AC-0002 — verified by `unit` (a named unit-test file)
+
+Rebuilding the bundle in place changes the command's reported embedded commit without touching the symlink.
+
+Proven by unit test `packages/cli/test/install.test.ts`.
+
+#### ARCH-FR-0003.AC-0003 — verified by `unit` (a named unit-test file)
+
+Removing the symlink removes the command from the path.
+
+Proven by unit test `packages/cli/test/install.test.ts`.
 
 ## Cli Surface
 
-### WTW-FR-0002 — CLI surface and error envelope
+### CLI-FR-0001 — Help and default output
 
-The complete public command surface is `wtw`, `wtw init`, `wtw sync [--open]`, `wtw check`, `wtw help [command]`, `wtw -h|--help`, and `wtw -V|--version`. Help and version paths exit 0; every excluded command, excluded option, and unexpected positional argument exits 1 with exactly one `Error: <message>` line on stderr and empty stdout.
+The public command surface is `wtw`, `wtw init`, `wtw sync [--open]`, `wtw check`, `wtw help [command]`, `wtw -h|--help`, and `wtw -V|--version`. The help and default-output paths are informational and always exit 0: a bare invocation and every help form print the corresponding help text on stdout.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0201 | Bare `wtw`, root help, command help, `-h`, and `--help` print the corresponding help text and exit 0. (spec AC-02.1) | ✅ `bare-invocation`, `help-command`, `help-root-short`, `help-root` |
-| AC-0202 | Only `init`, `sync [--open]`, and `check` are accepted product commands; every excluded command or option and every unexpected positional argument exits 1 with exactly one `Error: <message>` line on stderr and empty stdout. (spec AC-02.2) | ✅ `unexpected-positional`, `unknown-command`, `unknown-flag` |
-| AC-0203 | `init` and `check` reject every command-specific option and `sync` accepts only `--open`; a rejected option exits 1 with one `Error:` line on stderr and empty stdout. (spec AC-02.3) | ✅ `init-unknown-option`, `sync-unknown-option` |
+#### CLI-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: Bare invocation prints root help
+A bare `wtw` invocation prints the root help text on stdout and exits 0.
 
-Description: Running `wtw` with no arguments displays the root help. Commander's no-subcommand path writes that help to stderr (not stdout) and exits 0, so the case asserts empty stdout and the full help text on stderr.
-
-Covers: AC-0201
+Proven by case `bare-invocation` — Running `wtw` with no arguments displays the root help. Commander's no-subcommand path writes that help to stderr (not stdout) and exits 0, so the case asserts empty stdout and the full help text on stderr.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -119,49 +234,11 @@ Commands:
 
 </details>
 
-#### Case: Command help via init --help
+#### CLI-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: `wtw init --help` prints the `init` subcommand help to stdout and exits 0.
+`wtw --help` prints the root help text on stdout and exits 0.
 
-Covers: AC-0201
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Not exercised
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw init --help
-```
-
-**CLI output** — exit 0
-
-```console
-Usage: wtw init [options]
-
-Initialize wtw local automation for this repository
-
-Options:
-  -h, --help  display help for command
-```
-
-</details>
-
-#### Case: Root help via --help
-
-Description: `wtw --help` prints the root help text to stdout and exits 0.
-
-Covers: AC-0201
+Proven by case `help-root` — `wtw --help` prints the root help text to stdout and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -202,11 +279,11 @@ Commands:
 
 </details>
 
-#### Case: Root help via -h
+#### CLI-FR-0001.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-Description: `wtw -h` prints the same root help text to stdout and exits 0.
+`wtw -h` prints the root help text on stdout and exits 0.
 
-Covers: AC-0201
+Proven by case `help-root-short` — `wtw -h` prints the same root help text to stdout and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -247,44 +324,11 @@ Commands:
 
 </details>
 
-#### Case: init rejects a command-specific option
+#### CLI-FR-0001.AC-0004 — verified by `case` (a dedicated end-to-end case)
 
-Description: `init` accepts no command-specific options; `--open` (valid only on `sync`) is rejected, exiting 1 with one `Error: <message>` line on stderr and empty stdout.
+A command-scoped help invocation prints that command's help text on stdout and exits 0.
 
-Covers: AC-0203
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Not exercised
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw init --open
-```
-
-**CLI output** — exit 1
-
-```console
-Error: Unknown init option --open.
-```
-
-</details>
-
-#### Case: sync accepts only --open
-
-Description: `sync` accepts only the `--open` option; any other option is rejected, exiting 1 with one `Error: <message>` line on stderr and empty stdout.
-
-Covers: AC-0203
+Proven by case `help-command` — `wtw init --help` prints the `init` subcommand help to stdout and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -302,55 +346,31 @@ _Empty — no committed workspace files._
 **Command**
 
 ```console
-$ wtw sync --nope
+$ wtw init --help
 ```
 
-**CLI output** — exit 1
+**CLI output** — exit 0
 
 ```console
-Error: Unknown sync option --nope.
+Usage: wtw init [options]
+
+Initialize wtw local automation for this repository
+
+Options:
+  -h, --help  display help for command
 ```
 
 </details>
 
-#### Case: Unexpected positional argument is rejected
+### CLI-FR-0002 — Rejection of unrecognized input
 
-Description: A command that accepts no positional arguments rejects an extra positional, exiting 1 with exactly one `Error: <message>` line on stderr and empty stdout.
+Only `init`, `sync [--open]`, and `check` are accepted product commands. Every excluded command, every excluded option, and every unexpected positional argument is rejected through the single error envelope: exit code 1, exactly one `Error: <message>` line on stderr, and empty stdout.
 
-Covers: AC-0202
+#### CLI-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-<details>
-<summary>Evidence, input, command & output</summary>
+An unrecognized command exits 1 with exactly one `Error:` line on stderr and empty stdout.
 
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Not exercised
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw init extra
-```
-
-**CLI output** — exit 1
-
-```console
-Error: Unexpected argument extra for init.
-```
-
-</details>
-
-#### Case: Unknown command is rejected
-
-Description: An unknown command exits 1 with exactly one `Error: <message>` line on stderr and empty stdout.
-
-Covers: AC-0202
+Proven by case `unknown-command` — An unknown command exits 1 with exactly one `Error: <message>` line on stderr and empty stdout.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -379,11 +399,11 @@ Error: Expected command shape: wtw init, wtw sync [--open], or wtw check (plus -
 
 </details>
 
-#### Case: Unknown root flag is rejected
+#### CLI-FR-0002.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: An unknown root-level flag is not an accepted command, so it exits 1 with exactly one `Error: <message>` line on stderr and empty stdout.
+An unrecognized top-level flag exits 1 with exactly one `Error:` line on stderr and empty stdout.
 
-Covers: AC-0202
+Proven by case `unknown-flag` — An unknown root-level flag is not an accepted command, so it exits 1 with exactly one `Error: <message>` line on stderr and empty stdout.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -412,69 +432,153 @@ Error: Expected command shape: wtw init, wtw sync [--open], or wtw check (plus -
 
 </details>
 
-## Repository
+#### CLI-FR-0002.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-### WTW-FR-0003 — Repository resolution and support boundary
+An unexpected positional argument exits 1 with exactly one `Error:` line on stderr and empty stdout.
 
-Every product command (`init`, `sync`, `check`) resolves the same primary/common Git context from any supported invocation location — the primary root, a nested primary directory, a linked worktree root, and a nested linked directory — using structured (never shell-split) Git calls, so repository and worktree paths containing spaces survive verbatim. macOS is verified; Linux is allowed but reports unverified/best-effort status without claiming suite evidence; Windows and every other platform are unsupported. Supported repositories are non-bare and satisfy the five-conjunct primary-worktree predicate (non-bare, a present main record, a non-prunable main record, an existing primary path, and repository-root discovery resolving to the primary). An unsupported platform or repository shape is a deterministic, non-mutating finding/error; a post-discovery Git/permission failure is an ordinary command failure.
-
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0301 | Every product command (`init`, `sync`, `check`) invoked from the primary root, a nested primary directory, a linked root, and a nested linked directory resolves the same primary/common Git context. (spec AC-03.1) | ✅ `check-from-linked-root`, `check-healthy-all-pass`, `init-from-nested-primary`, `sync-from-linked-root` |
-| AC-0302 | A repository/worktree path containing spaces resolves without argument splitting or path corruption. (spec AC-03.2) | ✅ `repo-path-with-spaces` |
-| AC-0303 | A simulated Linux platform reports unverified/best-effort status without claiming suite evidence, while bare, Windows, and non-repository contexts produce deterministic unsupported/error findings without writes. (spec AC-03.3) | ✅ `check-nonrepo-skips-dependents`, `repo-bare-unsupported`, `repo-linux-unverified`, `repo-windows-unsupported` |
-| AC-0304 | Repository-shape cases fail a primary-support conjunct (e.g. a prunable primary record) without writes, and a post-discovery permission failure is reported as an ordinary command failure. (spec AC-03.4) | ✅ `repo-permission-post-discovery`, `repo-prunable-primary` |
-
-#### Case: check resolves the same primary context when run from a linked worktree
-
-Description: real Git, simulated Worktrunk/Cursor. The primary lives at `repo`; a linked worktree `wt-a` is created and initialized. `check` is invoked from the LINKED worktree root and still resolves the shared primary/common context — its Repository finding names the primary worktree at `<root>/repo` — and every finding passes, exiting 0. (Location independence, AC-03.1.)
-
-Covers: AC-0301
+Proven by case `unexpected-positional` — A command that accepts no positional arguments rejects an extra positional, exiting 1 with exactly one `Error: <message>` line on stderr and empty stdout.
 
 <details>
 <summary>Evidence, input, command & output</summary>
 
 **Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
 
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
+- Git: Not exercised
+- Worktrunk: Not exercised
+- Cursor: Not exercised
 
-**Local project** — ran from `wt-a/`
+**Local project** — ran from the project root
 
 _Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git -C .. init -b main repo`
-1. Runs `git -C ../repo commit --allow-empty -m init`
-1. Runs `git -C ../repo worktree add ../wt-a -b feature-a`
-1. Runs `wtw init`
 
 **Command**
 
 ```console
-$ wtw check
+$ wtw init extra
 ```
 
-**CLI output** — exit 0
+**CLI output** — exit 1
 
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Supported repository; primary worktree at __PROJECT_ROOT__/repo.
-0 warn, 0 fail
+```console
+Error: Unexpected argument extra for init.
 ```
 
 </details>
 
-#### Case: check prints every category in order with only PASS findings and exits 0
+### CLI-FR-0003 — Command-specific option rejection
 
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH; only `wt --version` is spawned, read-only). On a freshly initialized single-worktree repository, `check` prints the seven stable categories in their fixed order, every finding is PASS, the summary counts are deterministic, no Cursor launch occurs, and it exits 0. The full-stdout compare proves the exact category order and counts. Running from the primary root also proves context resolution (AC-03.1).
+Each product command constrains its own options: `init` and `check` accept no command-specific options, and `sync` accepts only `--open`. A rejected option is reported through the standard error envelope (exit 1, one `Error:` line on stderr, empty stdout).
 
-Covers: AC-0301
+#### CLI-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+`wtw init` given a foreign option exits 1 with exactly one `Error:` line on stderr.
+
+Proven by case `init-unknown-option` — `init` accepts no command-specific options; `--open` (valid only on `sync`) is rejected, exiting 1 with one `Error: <message>` line on stderr and empty stdout.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Not exercised
+- Worktrunk: Not exercised
+- Cursor: Not exercised
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw init --open
+```
+
+**CLI output** — exit 1
+
+```console
+Error: Unknown init option --open.
+```
+
+</details>
+
+#### CLI-FR-0003.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+`wtw sync` given an option other than `--open` exits 1 with exactly one `Error:` line on stderr.
+
+Proven by case `sync-unknown-option` — `sync` accepts only the `--open` option; any other option is rejected, exiting 1 with one `Error: <message>` line on stderr and empty stdout.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Not exercised
+- Worktrunk: Not exercised
+- Cursor: Not exercised
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw sync --nope
+```
+
+**CLI output** — exit 1
+
+```console
+Error: Unknown sync option --nope.
+```
+
+</details>
+
+#### CLI-FR-0003.AC-0003 — verified by `case` (a dedicated end-to-end case)
+
+`wtw check` given a command-specific option exits 1 with exactly one `Error:` line on stderr.
+
+Proven by case `check-unknown-option` — `check` accepts no command-specific options; a foreign option is rejected, exiting 1 with one `Error: <message>` line on stderr and empty stdout.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Not exercised
+- Worktrunk: Not exercised
+- Cursor: Not exercised
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check --stat
+```
+
+**CLI output** — exit 1
+
+```console
+Error: Unknown check option --stat.
+```
+
+</details>
+
+## Repository
+
+### REPO-FR-0001 — Uniform primary/common context resolution
+
+Every product command (`init`, `sync`, `check`) resolves the same primary/common Git context regardless of where it is invoked, using structured (never shell-split) Git calls. The supported invocation locations are the primary root, a nested directory of the primary, a linked worktree root, and a nested directory of a linked worktree.
+
+#### REPO-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A product command invoked from the primary root resolves the canonical primary/common context and exits 0.
+
+Proven by case `repo-from-primary-root` — real Git, simulated Worktrunk/Cursor. `init` is invoked from the primary worktree root `repo`. It resolves the canonical primary/common context, creates the canonical artifacts at that root, and exits 0. (Location independence, REPO-FR-0001.AC-0001.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -493,90 +597,31 @@ _Empty — no committed workspace files._
 
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
 
 **Command**
 
 ```console
-$ wtw check
+$ wtw init
 ```
 
 **CLI output** — exit 0
-
-```console
-Repository
-  PASS  macOS is a verified platform.
-  PASS  Supported repository; primary worktree at __PROJECT_ROOT__/repo.
-Dependencies
-  PASS  Git is available on PATH.
-  PASS  Worktrunk is available on PATH.
-  PASS  Cursor is available on PATH.
-  PASS  Node runtime is available on PATH.
-  PASS  wtw (hook executable) is available on PATH.
-Privacy
-  PASS  No required private path is tracked by Git.
-  PASS  Managed info/exclude block is present.
-Worktrunk
-  PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
-  PASS  .config/wt.toml carries the reserved wtw hooks.
-Copy policy
-  PASS  .worktreeinclude carries both required control entries.
-Synchronization
-  PASS  Linked worktree control files match the primary copies.
-  PASS  Cursor workspace folders match the current worktrees.
-Cursor workspace
-  PASS  Cursor workspace repo.code-workspace is valid JSONC.
-  PASS  No stale Git worktree registrations.
-
-Summary: 16 pass, 0 warn, 0 fail, 0 skipped.
-```
-
-</details>
-
-#### Case: an unresolved repository context marks dependent checks skipped, no cascade
-
-Description: real Git, simulated Worktrunk/Cursor. `check` runs in a non-repository directory: the Repository category FAILs deterministically (Git reports it is not a repository) and every dependent category (Privacy, Worktrunk, Copy policy, Synchronization, Cursor workspace) is marked SKIPPED rather than emitting cascading false failures. Dependencies still report independently. The command exits 1 and writes nothing.
-
-Covers: AC-0303
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
 
 _No exact stdout or stderr asserted._
 
 **Required stdout substrings**
 
 ```text
-FAIL  Not a supported Git repository
-SKIPPED  Skipped because the repository context is unavailable.
-0 warn, 1 fail, 5 skipped
+Initialized wtw local automation
+Created:
 ```
 
 </details>
 
-#### Case: init resolves the primary context when run from a nested primary directory
+#### REPO-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk/Cursor. `init` is invoked from a directory nested deep inside the primary worktree (`repo/src/deep`). It resolves the primary/common context, creates the canonical artifacts at the primary root `repo`, and exits 0. (Location independence, AC-03.1.)
+A product command invoked from a nested primary directory resolves the canonical primary/common context and exits 0.
 
-Covers: AC-0301
+Proven by case `init-from-nested-primary` — real Git, simulated Worktrunk/Cursor. `init` is invoked from a directory nested deep inside the primary worktree (`repo/src/deep`). It resolves the primary/common context, creates the canonical artifacts at the primary root `repo`, and exits 0. (Location independence, REPO-FR-0001.AC-0002.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -621,255 +666,11 @@ Created:
 
 </details>
 
-#### Case: a bare repository is an unsupported repository-shape failure without writes
+#### REPO-FR-0001.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk/Cursor. `check` runs in a bare repository. The primary-support predicate fails its non-bare conjunct, so the Repository category FAILs deterministically, every dependent category is SKIPPED, and the command exits 1 without writing.
+A product command invoked from a linked worktree root resolves the canonical primary/common context and exits 0.
 
-Covers: AC-0303
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init --bare .`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Repository is bare; wtw supports only non-bare repositories.
-SKIPPED  Skipped because the repository context is unavailable.
-```
-
-</details>
-
-#### Case: a simulated Linux host reports unverified/best-effort without failing
-
-Description: real Git, simulated Worktrunk/Cursor, simulated Linux platform (`WTW_PLATFORM=linux`). On a healthy repository, `check` reports Linux as allowed but unverified/best-effort — a WARN that never claims suite evidence — while every other finding passes. A warning-only run exits 0.
-
-Covers: AC-0303
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-WARN  Linux is allowed but unverified/best-effort; the wtw suites have not been run there.
-1 warn, 0 fail
-```
-
-</details>
-
-#### Case: a repository path containing spaces resolves without splitting
-
-Description: real Git, simulated Worktrunk/Cursor. The repository lives in a directory whose name contains a space (`my repo`). `init` then `check` resolve and operate on that path without argument splitting or corruption: every Git and file operation uses structured arguments, and `check` names the primary worktree at `<root>/my repo` with all findings passing, exiting 0.
-
-Covers: AC-0302
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `my repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Supported repository; primary worktree at __PROJECT_ROOT__/my repo.
-0 warn, 0 fail
-```
-
-</details>
-
-#### Case: a post-discovery Git failure is reported as an ordinary command failure
-
-Description: simulated Git (shape mode; the fake succeeds on `--git-common-dir`, the worktree list, and `--is-bare-repository`, then fails on `--show-toplevel` as a permission error), simulated Worktrunk/Cursor. `check` treats the post-discovery failure as an ordinary command failure surfaced under the Repository category (not a support-boundary verdict), SKIPs the dependent categories, and exits 1 without writing.
-
-Covers: AC-0304
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Simulated
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Not a supported Git repository
-SKIPPED  Skipped because the repository context is unavailable.
-```
-
-</details>
-
-#### Case: a prunable primary record fails the support predicate without writes
-
-Description: simulated Git (shape mode, `WTW_GIT_BIN` → the checked-in fake `git` deriving every path from its own cwd), simulated Worktrunk/Cursor. The fake reports a primary worktree record marked `prunable`, so `check`'s repository predicate fails its `primary_not_prunable` conjunct independently of the other conjuncts: the Repository category FAILs, dependent categories are SKIPPED, and the command exits 1 without writing.
-
-Covers: AC-0304
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Simulated
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  The primary worktree record is prunable
-SKIPPED  Skipped because the repository context is unavailable.
-```
-
-</details>
-
-#### Case: a simulated Windows host is an unsupported platform failure without writes
-
-Description: real Git, simulated Worktrunk/Cursor, simulated Windows platform (`WTW_PLATFORM=win32`). `check` reports the platform as unsupported (a FAIL), marks the repository shape and every dependent category SKIPPED (no cascade), writes nothing, and exits 1.
-
-Covers: AC-0303
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Platform "win32" is unsupported; wtw supports macOS (verified) and Linux (unverified/best-effort).
-SKIPPED  Repository shape not checked because the platform is unsupported.
-```
-
-</details>
-
-#### Case: sync resolves the same primary context when run from a linked worktree
-
-Description: real Git, simulated Worktrunk/Cursor. The primary lives at `repo`; a linked worktree `wt-a` is created and initialized. Plain `sync` invoked from the LINKED worktree root resolves the shared primary/common context, reconciles successfully, and exits 0. (Location independence, AC-03.1.)
-
-Covers: AC-0301
+Proven by case `sync-from-linked-root` — real Git, simulated Worktrunk/Cursor. The primary lives at `repo`; a linked worktree `wt-a` is created and initialized. Plain `sync` invoked from the LINKED worktree root resolves the shared primary/common context, reconciles successfully, and exits 0. (Location independence, REPO-FR-0001.AC-0003.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -909,24 +710,470 @@ Synchronized
 
 </details>
 
+#### REPO-FR-0001.AC-0004 — verified by `case` (a dedicated end-to-end case)
+
+A product command invoked from a nested linked-worktree directory resolves the canonical primary/common context and exits 0.
+
+Proven by case `repo-from-nested-linked` — real Git, simulated Worktrunk/Cursor. The primary lives at `repo`; a linked worktree `wt-a` is created carrying a committed nested directory `sub`. Plain `sync` invoked from the NESTED linked-worktree directory `wt-a/sub` resolves the shared primary/common context, reconciles successfully, and exits 0. (Location independence, REPO-FR-0001.AC-0004.) The node setup step rebuilds the linked worktree because the harness pre-creates the nested cwd, which `git worktree add` would otherwise refuse as a non-empty target.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `wt-a/sub/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Copies `seed/keep` → `repo/sub/.keep`
+1. Runs `git init -b main ../../repo`
+1. Runs `git -C ../../repo add sub/.keep`
+1. Runs `git -C ../../repo commit -m init`
+1. Runs `node -e const{execFileSync}=require('child_process');const path=require('path');const root=path.resolve(process.cwd(),'../..');execFileSync('rmdir',[path.join(root,'wt-a','sub')]);execFileSync('git',['-C',path.join(root,'repo'),'worktree','add',path.join(root,'wt-a'),'-b','feature-a']);`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw sync
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Synchronized
+```
+
+</details>
+
+### REPO-FR-0002 — Whitespace-safe repository paths
+
+Because Git is invoked with structured arguments rather than a shell split, repository and worktree paths that contain spaces survive verbatim through resolution and command execution.
+
+#### REPO-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A repository whose worktree path contains spaces resolves without argument splitting or path corruption and the command exits 0.
+
+Proven by case `repo-path-with-spaces` — real Git, simulated Worktrunk/Cursor. The repository lives in a directory whose name contains a space (`my repo`). `init` then `check` resolve and operate on that path without argument splitting or corruption: every Git and file operation uses structured arguments, and `check` names the primary worktree at `<root>/my repo` with all findings passing, exiting 0.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `my repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Supported repository; primary worktree at __PROJECT_ROOT__/my repo.
+0 warn, 0 fail
+```
+
+</details>
+
+### REPO-FR-0003 — Platform support boundary
+
+macOS is the verified platform. Linux is allowed but best-effort: it reports unverified status without claiming test-suite evidence. Windows and every other platform are unsupported and produce a deterministic, non-mutating finding.
+
+#### REPO-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+On a simulated Linux platform the run reports unverified best-effort status without claiming test-suite evidence.
+
+Proven by case `repo-linux-unverified` — real Git, simulated Worktrunk/Cursor, simulated Linux platform (`WTW_PLATFORM=linux`). On a healthy repository, `check` reports Linux as allowed but unverified/best-effort — a WARN that never claims suite evidence — while every other finding passes. A warning-only run exits 0.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+WARN  Linux is allowed but unverified/best-effort; the wtw suites have not been run there.
+1 warn, 0 fail
+```
+
+</details>
+
+#### REPO-FR-0003.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+On a simulated Windows platform the run reports a deterministic unsupported finding and writes nothing.
+
+Proven by case `repo-windows-unsupported` — real Git, simulated Worktrunk/Cursor, simulated Windows platform (`WTW_PLATFORM=win32`). `check` reports the platform as unsupported (a FAIL), marks the repository shape and every dependent category SKIPPED (no cascade), writes nothing, and exits 1.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Platform "win32" is unsupported; wtw supports macOS (verified) and Linux (unverified/best-effort).
+SKIPPED  Repository shape not checked because the platform is unsupported.
+```
+
+</details>
+
+### REPO-FR-0004 — Repository-shape support boundary
+
+A supported repository is non-bare and satisfies the primary-worktree predicate: a present main worktree record, a non-prunable main record, an existing primary path, and repository-root discovery resolving to the primary. A repository that fails any conjunct, a bare repository, and a non-repository directory each produce a deterministic finding or error and leave the tree unwritten.
+
+#### REPO-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A bare repository produces a deterministic unsupported finding and writes nothing.
+
+Proven by case `repo-bare-unsupported` — real Git, simulated Worktrunk/Cursor. `check` runs in a bare repository. The primary-support predicate fails its non-bare conjunct, so the Repository category FAILs deterministically, every dependent category is SKIPPED, and the command exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init --bare .`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Repository is bare; wtw supports only non-bare repositories.
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
+#### REPO-FR-0004.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+A non-repository directory produces a deterministic error and writes nothing.
+
+Proven by case `repo-nonrepo-directory` — real Git, no repository. `init` is invoked in a directory that is not a Git repository, so read-only discovery (`git rev-parse --git-common-dir`) fails. wtw surfaces this as an ordinary, deterministic command failure: exit 1 with a single `Error:` line on stderr and empty stdout, before any write.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Not exercised
+- Worktrunk: Not exercised
+- Cursor: Not exercised
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**CLI output** — exit 1
+
+```console
+Error: git rev-parse --git-common-dir failed (exit 128): fatal: not a git repository (or any of the parent directories): .git
+```
+
+</details>
+
+#### REPO-FR-0004.AC-0003 — verified by `case` (a dedicated end-to-end case)
+
+A repository whose main worktree record is absent is rejected and writes nothing.
+
+Proven by case `repo-primary-record-absent` — simulated Git (shape mode, `WTW_GIT_BIN` -> the checked-in fake `git`), simulated Worktrunk/Cursor. The fake reports only a bare worktree entry, so no main/primary worktree record is present: `check`'s repository predicate fails its `primary_record_present` conjunct, the Repository category FAILs, dependent categories are SKIPPED, and the command exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Simulated
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  `git worktree list --porcelain` reported no main/primary worktree record.
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
+#### REPO-FR-0004.AC-0004 — verified by `case` (a dedicated end-to-end case)
+
+A repository whose main worktree record is prunable is rejected and writes nothing.
+
+Proven by case `repo-prunable-primary` — simulated Git (shape mode, `WTW_GIT_BIN` → the checked-in fake `git` deriving every path from its own cwd), simulated Worktrunk/Cursor. The fake reports a primary worktree record marked `prunable`, so `check`'s repository predicate fails its `primary_not_prunable` conjunct independently of the other conjuncts: the Repository category FAILs, dependent categories are SKIPPED, and the command exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Simulated
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  The primary worktree record is prunable
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
+#### REPO-FR-0004.AC-0005 — verified by `case` (a dedicated end-to-end case)
+
+A repository whose primary worktree path is missing is rejected and writes nothing.
+
+Proven by case `repo-primary-path-missing` — simulated Git (shape mode, `WTW_GIT_BIN` -> the checked-in fake `git`), simulated Worktrunk/Cursor. The fake reports a primary worktree record whose directory does not exist, so `check`'s repository predicate fails its `primary_path_exists` conjunct: the Repository category FAILs, dependent categories are SKIPPED, and the command exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Simulated
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  The primary worktree path does not exist as a directory:
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
+#### REPO-FR-0004.AC-0006 — verified by `case` (a dedicated end-to-end case)
+
+A repository whose root discovery does not resolve to the primary is rejected and writes nothing.
+
+Proven by case `repo-root-not-primary` — simulated Git (shape mode, `WTW_GIT_BIN` -> the checked-in fake `git`), simulated Worktrunk/Cursor. The fake makes `--show-toplevel` resolve to a subdirectory of the primary rather than the primary path, so `check`'s repository predicate fails its `root_resolves_to_primary` conjunct: the Repository category FAILs, dependent categories are SKIPPED, and the command exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Simulated
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Git repository-root discovery resolved to
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
+### REPO-FR-0005 — Post-discovery failures are ordinary command failures
+
+A support finding is a pre-write, non-mutating judgment about the platform and repository shape. Once discovery succeeds, a later Git or permission failure is not a support finding but an ordinary command failure.
+
+#### REPO-FR-0005.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A permission failure encountered after successful discovery is reported as an ordinary command failure with exit 1.
+
+Proven by case `repo-permission-post-discovery` — simulated Git (shape mode; the fake succeeds on `--git-common-dir`, the worktree list, and `--is-bare-repository`, then fails on `--show-toplevel` as a permission error), simulated Worktrunk/Cursor. `check` treats the post-discovery failure as an ordinary command failure surfaced under the Repository category (not a support-boundary verdict), SKIPs the dependent categories, and exits 1 without writing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Simulated
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Not a supported Git repository
+SKIPPED  Skipped because the repository context is unavailable.
+```
+
+</details>
+
 ## Init
 
-### WTW-FR-0004 — Initialization preflight and idempotency
+### INIT-FR-0001 — Clean initialization of an empty repository
 
-`wtw init` runs a COMPLETE predictable-conflict preflight before writing anything and writes nothing on any conflict: allowed OS and non-bare repository shape, the primary-worktree predicate, presence of Git, Worktrunk, Cursor, the Node runtime, and the `wtw` executable used by hooks (all resolved through `PATH` without being spawned), untracked required private paths, valid-or-absent standard artifacts, exact reserved hooks in an existing `.config/wt.toml`, and validity of existing `.worktreeinclude`, workspace JSONC, and managed exclude content. After a clean preflight it creates only the missing scaffolds, reconciles the managed `info/exclude` block, and runs the same internal blocking synchronization as `wtw sync` with Cursor closed. A healthy rerun is a no-op apart from reconciliation; an unexpected filesystem failure mid-write reports every completed write, exits 1, and attempts no broad destructive rollback.
+On an empty supported repository with no conflicts, `wtw init` runs its predictable-conflict preflight, then creates only the missing scaffolds. The canonical control files and the Cursor multi-root workspace are written and the command exits 0. Related guarantees of a clean init — the managed exclude block, the byte-exact TOML hooks, synchronization of linked worktrees, and never launching Cursor or Worktrunk approval — are owned by the privacy, worktrunk-config, sync, and cursor-launch domains respectively.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0401 | Each predictable conflict enumerated by the `init` contract exits 1 and leaves the complete fixture byte-for-byte unchanged. (spec AC-04.1) | ✅ `init-invalid-workspace-no-writes`, `init-tracked-path-no-writes` |
-| AC-0402 | On an empty supported repository, `init` creates exactly the canonical TOML, include, workspace, and managed-exclude content, synchronizes existing linked worktrees, launches neither Cursor nor approval, and exits 0. (spec AC-04.2) | ✅ `init-empty-repo-creates-all` |
-| AC-0403 | Rerunning `init` on a healthy setup exits 0, preserves user-authored bytes outside managed regions, and makes no semantic change beyond required reconciliation. (spec AC-04.3) | ✅ `init-rerun-idempotent` |
-| AC-0404 | An injected post-write filesystem failure exits 1 and reports the writes completed before failure without attempting broad deletion/rollback. (spec AC-04.4) | ✅ `init-injected-failure-no-rollback` |
+#### INIT-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: init creates every canonical artifact and synchronizes linked worktrees
+Initializing an empty supported repository writes the canonical control files and the Cursor workspace and exits 0.
 
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
-
-Covers: AC-0402
+Proven by case `init-empty-repo-creates-all` — real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1092,11 +1339,153 @@ Synchronized
 
 </details>
 
-#### Case: an injected post-write failure reports completed writes without rollback
+### INIT-FR-0002 — Dependency preflight writes nothing on conflict
 
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A test-only fault is injected immediately after the `.worktreeinclude` scaffold is written. `init` exits 1, reports on stdout the writes it completed before the failure, and attempts no broad rollback: both completed scaffolds remain on disk byte-for-byte.
+Before writing anything, `wtw init` verifies that Git, Worktrunk, Cursor, the Node runtime, and the `wtw` executable used by the hooks are all resolvable through `PATH` (they are resolved, never spawned). A missing required executable is a predictable preflight conflict on which init writes nothing. Other predictable conflicts (unsupported shape, tracked private paths, invalid or conflicting artifacts) are owned by the repository, privacy, worktrunk-config, copy-policy, and workspace domains.
 
-Covers: AC-0404
+#### INIT-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+When a required executable cannot be resolved on `PATH`, init exits 1 and leaves the fixture byte-for-byte unchanged.
+
+Proven by case `init-missing-dependency-no-writes` — real Git, simulated Cursor. The Worktrunk (`wt`) executable cannot be resolved on PATH, so init's dependency preflight raises a predictable conflict. init exits 1, prints the exact `Error:` preflight message on stderr with empty stdout, and writes nothing: the user-authored `info/exclude` is byte-for-byte unchanged (no managed block added).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Not exercised
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Copies `seed/exclude` → `repo/.git/info/exclude`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.git/info/exclude`
+
+```text
+# user excludes
+scratch/
+```
+
+**CLI output** — exit 1
+
+```console
+Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
+  - Required executable not found on PATH: Worktrunk (`wtw-missing-bin`).
+```
+
+</details>
+
+### INIT-FR-0003 — Idempotent rerun on a healthy setup
+
+Rerunning `wtw init` on a repository that is already healthy is a no-op apart from managed-region reconciliation: it makes no semantic change beyond required reconciliation and preserves every user-authored byte outside the managed regions.
+
+#### INIT-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+Rerunning init on a healthy setup exits 0 and preserves user-authored bytes outside managed regions.
+
+Proven by case `init-rerun-idempotent` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A first `init` (run as a setup step) creates the scaffolds and the managed exclude block over a user-authored `info/exclude`. The second `init` (the command under test) exits 0, preserves the scaffolds and the user bytes, and leaves a single managed block with no duplicated entries.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Copies `seed/exclude` → `repo/.git/info/exclude`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`repo/.git/info/exclude`
+
+```text
+# local excludes
+scratch/
+# >>> wtw managed >>>
+.config/wt.toml
+.worktreeinclude
+repo.code-workspace
+# <<< wtw managed <<<
+```
+
+`repo/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Preserved:
+already up to date
+```
+
+</details>
+
+### INIT-FR-0004 — Crash safety on mid-write failure
+
+If an unexpected filesystem failure occurs after some writes have completed, `wtw init` fails loudly without attempting a broad destructive rollback: it reports the writes already completed and leaves them in place.
+
+#### INIT-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+An injected post-write filesystem failure exits 1 and reports the writes completed before the failure without deleting them.
+
+Proven by case `init-injected-failure-no-rollback` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A test-only fault is injected immediately after the `.worktreeinclude` scaffold is written. `init` exits 1, reports on stdout the writes it completed before the failure, and attempts no broad rollback: both completed scaffolds remain on disk byte-for-byte.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1162,266 +1551,17 @@ Initialization did not complete
 
 </details>
 
-#### Case: an invalid workspace JSONC makes init perform no writes
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary `<repo>.code-workspace` is invalid JSONC. `init` detects it in the preflight, exits 1, and writes nothing: the workspace file and the user-authored `info/exclude` are byte-for-byte unchanged (no managed block is added, no scaffolds are created).
-
-Covers: AC-0401
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Copies `seed/workspace` → `repo/repo.code-workspace`
-1. Copies `seed/exclude` → `repo/.git/info/exclude`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.git/info/exclude`
-
-```text
-# local excludes
-scratch/
-```
-
-`repo/repo.code-workspace`
-
-```text
-{ this is not : valid json ]
-```
-
-**CLI output** — exit 1
-
-```console
-Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
-  - The Cursor workspace repo.code-workspace is not valid JSONC; fix it before running init.
-```
-
-</details>
-
-#### Case: rerunning init on a healthy setup is a no-op apart from reconciliation
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A first `init` (run as a setup step) creates the scaffolds and the managed exclude block over a user-authored `info/exclude`. The second `init` (the command under test) exits 0, preserves the scaffolds and the user bytes, and leaves a single managed block with no duplicated entries.
-
-Covers: AC-0403
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Copies `seed/exclude` → `repo/.git/info/exclude`
-1. Runs `wtw init`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.git/info/exclude`
-
-```text
-# local excludes
-scratch/
-# >>> wtw managed >>>
-.config/wt.toml
-.worktreeinclude
-repo.code-workspace
-# <<< wtw managed <<<
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Preserved:
-already up to date
-```
-
-</details>
-
-#### Case: a tracked required private path makes init perform no writes
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A required private path (`.worktreeinclude`) is committed, so it is tracked by Git. Because a local exclude cannot hide a tracked file, `init` reports the privacy conflict, exits 1, and writes nothing: the tracked file and the user-authored `info/exclude` are both byte-for-byte unchanged (no managed block is added).
-
-Covers: AC-0401
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Copies `seed/worktreeinclude` → `repo/.worktreeinclude`
-1. Runs `git add .worktreeinclude`
-1. Runs `git commit -m track worktreeinclude`
-1. Copies `seed/exclude` → `repo/.git/info/exclude`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.git/info/exclude`
-
-```text
-# local excludes
-scratch/
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**CLI output** — exit 1
-
-```console
-Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
-  - Required private path(s) tracked by Git: .worktreeinclude. Local excludes cannot hide tracked files; untrack them (e.g. `git rm --cached <path>`) before running init.
-```
-
-</details>
-
 ## Privacy
 
-### WTW-FR-0005 — Privacy and local exclude ownership
+### PRIV-FR-0001 — Managed local-exclude block
 
-The canonical local artifacts (`.config/wt.toml`, `.worktreeinclude`, and the primary `<repo>.code-workspace`) are private per-clone automation kept out of commits through a single delimited, idempotently managed block in the shared `<git-common-dir>/info/exclude`, covering exactly those paths and preserving all unrelated bytes. Because a local exclude cannot hide a file Git already tracks, any required private path that is tracked is a privacy conflict: `init` performs no writes. Reconciling an existing valid managed block never duplicates its entries.
+The canonical local artifacts (`.config/wt.toml`, `.worktreeinclude`, and the primary `<repo>.code-workspace`) are private per-clone automation kept out of commits through a single delimited, idempotently managed block in the shared `<git-common-dir>/info/exclude`. The block covers exactly the canonical private paths and preserves all unrelated bytes; reconciling an existing valid block never duplicates its entries.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0501 | Initialization creates/reconciles one delimited local-exclude block containing all required private paths while preserving all unrelated `info/exclude` bytes. (spec AC-05.1) | ✅ `init-exclude-block-preserves` |
-| AC-0502 | If any required private path is tracked by Git, `init` performs no writes and introduces no tracked repository file. The complementary `check` FAIL is proven by `wtw check` (Task 13). (spec AC-05.2) | ✅ `check-tracked-path-fails`, `init-tracked-path-no-writes` |
-| AC-0503 | Reconciliation of an existing valid managed block is idempotent and never duplicates its entries. (spec AC-05.3) | ✅ `init-rerun-idempotent` |
+#### PRIV-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: check fails when a required private path is tracked by Git
+Initialization writes one delimited managed block containing all required private paths and preserves all unrelated `info/exclude` bytes.
 
-Description: real Git, simulated Worktrunk/Cursor. After a healthy `init`, a required private path (`.worktreeinclude`) is force-added and committed, so Git tracks it. Because a local exclude cannot hide a tracked file, `check` emits a Privacy FAIL naming the tracked path and exits 1 (the complementary check-side half of AC-05.2; the `init` no-write half is proven by `init-tracked-path-no-writes`).
-
-Covers: AC-0502
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-1. Runs `git add -f .worktreeinclude`
-1. Runs `git commit -m track worktreeinclude`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Required private path(s) tracked by Git: .worktreeinclude.
-0 warn, 1 fail
-```
-
-</details>
-
-#### Case: init creates the managed exclude block preserving unrelated bytes
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `info/exclude` carries user lines and no managed block. `init` appends one delimited managed block covering exactly the required private paths and leaves every unrelated byte untouched.
-
-Covers: AC-0501
+Proven by case `init-exclude-block-preserves` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `info/exclude` carries user lines and no managed block. `init` appends one delimited managed block covering exactly the required private paths and leaves every unrelated byte untouched.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1474,11 +1614,11 @@ Reconciled the managed info/exclude block
 
 </details>
 
-#### Case: rerunning init on a healthy setup is a no-op apart from reconciliation
+#### PRIV-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A first `init` (run as a setup step) creates the scaffolds and the managed exclude block over a user-authored `info/exclude`. The second `init` (the command under test) exits 0, preserves the scaffolds and the user bytes, and leaves a single managed block with no duplicated entries.
+Reconciling an already-valid managed block adds no duplicate entries.
 
-Covers: AC-0503
+Proven by case `init-exclude-block-no-duplicates` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `info/exclude` already carries a valid managed block covering exactly the required private paths. `init` reconciles it as a no-op: the single delimited block is preserved with no duplicated entries, and the command exits 0 reporting the block is already up to date.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1498,7 +1638,6 @@ _Empty — no committed workspace files._
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
 1. Copies `seed/exclude` → `repo/.git/info/exclude`
-1. Runs `wtw init`
 
 **Command**
 
@@ -1507,19 +1646,6 @@ $ wtw init
 ```
 
 **Output files**
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
 
 `repo/.git/info/exclude`
 
@@ -1533,15 +1659,6 @@ repo.code-workspace
 # <<< wtw managed <<<
 ```
 
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
 **CLI output** — exit 0
 
 _No exact stdout or stderr asserted._
@@ -1549,17 +1666,20 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-Preserved:
-already up to date
+Managed info/exclude block already up to date.
 ```
 
 </details>
 
-#### Case: a tracked required private path makes init perform no writes
+### PRIV-FR-0002 — Tracked private paths are a privacy conflict
 
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A required private path (`.worktreeinclude`) is committed, so it is tracked by Git. Because a local exclude cannot hide a tracked file, `init` reports the privacy conflict, exits 1, and writes nothing: the tracked file and the user-authored `info/exclude` are both byte-for-byte unchanged (no managed block is added).
+A local exclude cannot hide a file Git already tracks, so any required private path that is tracked is a privacy conflict. On such a conflict `init` performs no writes, `check` reports the conflict as a failure, and a successful initialization never introduces a newly tracked repository file.
 
-Covers: AC-0502
+#### PRIV-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+When a required private path is already tracked by Git, init performs no writes.
+
+Proven by case `init-tracked-path-no-writes` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A required private path (`.worktreeinclude`) is committed, so it is tracked by Git. Because a local exclude cannot hide a tracked file, `init` reports the privacy conflict, exits 1, and writes nothing: the tracked file and the user-authored `info/exclude` are both byte-for-byte unchanged (no managed block is added).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1615,66 +1735,11 @@ Error: init cannot proceed; resolve the following, then rerun (wtw made no chang
 
 </details>
 
-## Worktrunk Config
+#### PRIV-FR-0002.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-### WTW-FR-0006 — Worktrunk configuration and customization
+When a required private path is already tracked by Git, check reports a failure.
 
-`wtw` scaffolds a standard `.config/wt.toml` only when it is absent, with the three reserved hooks (`pre-start` blocking copy, `post-start` sync-and-open, `post-remove` sync) carrying their exact contract command strings. `wtw` never rewrites an existing TOML: a file that already carries all reserved hooks — alongside any custom hooks, comments, order, and settings — is preserved byte-for-byte, while a missing or conflicting reserved hook is a no-write preflight conflict reporting the exact manual additions the user must make before rerunning. `init` neither invokes nor mutates Worktrunk approval.
-
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0601 | A missing `.config/wt.toml` is scaffolded with exact distinct blocking-copy, post-start-sync/open, and post-remove-sync commands. (spec AC-06.1) | ✅ `init-empty-repo-creates-all` |
-| AC-0602 | An existing TOML file with all reserved hooks is preserved byte-for-byte, including unrelated custom hooks, comments, order, and settings. (spec AC-06.2) | ✅ `init-preserves-compatible-toml` |
-| AC-0603 | An existing TOML missing or conflicting with a reserved hook makes `init` perform no writes and print the exact manual additions; after the fixture is manually corrected, a rerun succeeds without rewriting it. (spec AC-06.3) | ✅ `init-hook-conflict-corrected`, `init-hook-conflict-no-writes` |
-| AC-0604 | Initialization neither invokes nor mutates Worktrunk approval (the Worktrunk executable is only resolved on `PATH`, never spawned). The real-contract native first-use approval observation is proven by Task 15. (spec AC-06.4) | ✅ `contract-lifecycle`, `init-empty-repo-creates-all` |
-
-#### Case: full real-Worktrunk lifecycle against the built wtw
-
-Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
-
-Covers: AC-0604
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
-
-- Git: Real
-- Worktrunk: Real
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Initialized wtw local automation for this repository.
-```
-
-</details>
-
-#### Case: init creates every canonical artifact and synchronizes linked worktrees
-
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
-
-Covers: AC-0601, AC-0604
+Proven by case `check-tracked-path-fails` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, a required private path (`.worktreeinclude`) is force-added and committed, so Git tracks it. Because a local exclude cannot hide a tracked file, `check` emits a Privacy FAIL naming the tracked path and exits 1 (the complementary check-side half of PRIV-FR-0002 (PRIV-FR-0002.AC-0002); the `init` no-write half is proven by `init-tracked-path-no-writes`).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1687,31 +1752,107 @@ Covers: AC-0601, AC-0604
 
 **Local project** — ran from `repo/`
 
-```text
-./
-└─ repo/
-   ├─ .fake-cursor.log
-   └─ .fake-wt.log
-```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
+_Empty — no committed workspace files._
 
 **Setup steps** — run before the command
 
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-b ../wt-b`
-1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `wtw init`
+1. Runs `git add -f .worktreeinclude`
+1. Runs `git commit -m track worktreeinclude`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Required private path(s) tracked by Git: .worktreeinclude.
+0 warn, 1 fail
+```
+
+</details>
+
+#### PRIV-FR-0002.AC-0003 — verified by `case` (a dedicated end-to-end case)
+
+A successful initialization introduces no newly tracked repository file.
+
+Proven by case `init-no-newly-tracked-file` — real Git, simulated Worktrunk/Cursor. A successful `init` (run as a setup step) scaffolds the canonical control files and the workspace. A follow-up `check` confirms the initialization introduced no newly tracked repository file: the Privacy category reports that no required private path is tracked by Git, and the command exits 0.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+PASS  No required private path is tracked by Git.
+```
+
+</details>
+
+## Worktrunk Config
+
+### CONF-FR-0001 — Scaffolding a missing wt.toml
+
+When `.config/wt.toml` is absent, `wtw init` scaffolds a standard Worktrunk project config carrying the three reserved wtw hooks with their exact contract command strings: a `pre-start` blocking copy, a `post-start` sync-and-open, and a `post-remove` sync.
+
+#### CONF-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A scaffolded `.config/wt.toml` carries the three reserved hooks with their exact distinct blocking-copy, post-start sync/open, and post-remove sync command strings.
+
+Proven by case `init-scaffolds-toml-hooks` — real Git, simulated Worktrunk/Cursor. `.config/wt.toml` is absent, so `init` scaffolds it. The scaffolded file carries exactly the three reserved hooks with their distinct contract command strings: a `pre-start` blocking copy, a `post-start` sync-and-open, and a `post-remove` sync. The full-file compare proves the exact command strings.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
 
 **Command**
 
@@ -1734,99 +1875,6 @@ wtw-sync = "wtw sync --open"
 wtw-sync = "wtw sync"
 ```
 
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`repo/repo.code-workspace`
-
-```text
-{
-  "folders": [
-    {
-      "path": "__PROJECT_ROOT__/repo"
-    },
-    {
-      "name": "feature-a",
-      "path": "__PROJECT_ROOT__/wt-a"
-    },
-    {
-      "name": "feature-b",
-      "path": "__PROJECT_ROOT__/wt-b"
-    }
-  ]
-}
-```
-
-`wt-a/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`wt-b/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-b/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Output file constraints**
-
-- `repo/.git/info/exclude` contains `# >>> wtw managed >>>`
-- `repo/.git/info/exclude` contains `.config/wt.toml`
-- `repo/.git/info/exclude` contains `.worktreeinclude`
-- `repo/.git/info/exclude` contains `repo.code-workspace`
-- `repo/.git/info/exclude` contains `# <<< wtw managed <<<`
-
 **CLI output** — exit 0
 
 _No exact stdout or stderr asserted._
@@ -1835,16 +1883,149 @@ _No exact stdout or stderr asserted._
 
 ```text
 Created:
-Synchronized
 ```
 
 </details>
 
-#### Case: after correcting a hook conflict, rerunning init succeeds without rewriting
+### CONF-FR-0002 — Preserving an existing compatible TOML
 
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A first `init` (a setup step allowed to fail) refuses a conflicting `.config/wt.toml`. The fixture is then manually corrected to carry all reserved hooks plus a custom hook. The rerun (the command under test) succeeds, exits 0, and preserves the corrected TOML byte-for-byte (it is never rewritten).
+`wtw` never rewrites an existing `.config/wt.toml`. A file that already carries all three reserved hooks is preserved byte-for-byte, including any unrelated custom hooks, comments, ordering, and settings.
 
-Covers: AC-0603
+#### CONF-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+An existing TOML carrying all reserved hooks is left byte-for-byte unchanged, including custom hooks, comments, order, and settings.
+
+Proven by case `init-preserves-compatible-toml` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `.config/wt.toml` carries all three reserved hooks alongside a custom comment and a custom hook. `init` preflight accepts it and never rewrites it: the file is preserved byte-for-byte (custom content, ordering, and comments intact) and `init` exits 0.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Copies `seed/wt.toml` → `repo/.config/wt.toml`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.config/wt.toml`
+
+```toml
+# my project hooks
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+
+[custom]
+greet = "echo hello"
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Preserved:
+.config/wt.toml
+```
+
+</details>
+
+### CONF-FR-0003 — Reserved-hook conflict handling
+
+A `.config/wt.toml` that is missing a reserved hook, or defines one whose command conflicts with the contract, is a no-write preflight conflict: init performs no writes and prints the exact manual additions the user must make. After the user corrects the file by hand, a rerun succeeds without rewriting it.
+
+#### CONF-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+An existing TOML missing or conflicting with a reserved hook makes init perform no writes and print the exact manual additions.
+
+Proven by case `init-hook-conflict-no-writes` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `.config/wt.toml` is missing the `post-start` reserved hook. `init` never rewrites the TOML: it exits 1, prints the exact manual additions the user must make, and writes nothing — the TOML and the user-authored `info/exclude` are byte-for-byte unchanged (no managed block is added).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Copies `seed/wt.toml` → `repo/.config/wt.toml`
+1. Copies `seed/exclude` → `repo/.git/info/exclude`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`repo/.git/info/exclude`
+
+```text
+# local excludes
+scratch/
+```
+
+**CLI output** — exit 1
+
+```console
+Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
+  - Existing .config/wt.toml is missing required wtw hooks or uses conflicting commands; add exactly the block(s) below, then rerun init.
+
+[post-start]
+wtw-sync = "wtw sync --open"
+```
+
+</details>
+
+#### CONF-FR-0003.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+After the required hooks are added by hand, a rerun succeeds and leaves the file unrewritten.
+
+Proven by case `init-hook-conflict-corrected` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A first `init` (a setup step allowed to fail) refuses a conflicting `.config/wt.toml`. The fixture is then manually corrected to carry all reserved hooks plus a custom hook. The rerun (the command under test) succeeds, exits 0, and preserves the corrected TOML byte-for-byte (it is never rewritten).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1904,11 +2085,15 @@ Preserved:
 
 </details>
 
-#### Case: a missing reserved hook makes init perform no writes and print exact additions
+### CONF-FR-0004 — Initialization never touches Worktrunk approval
 
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `.config/wt.toml` is missing the `post-start` reserved hook. `init` never rewrites the TOML: it exits 1, prints the exact manual additions the user must make, and writes nothing — the TOML and the user-authored `info/exclude` are byte-for-byte unchanged (no managed block is added).
+`wtw init` neither invokes nor mutates Worktrunk's native approval state. The Worktrunk executable is only resolved on `PATH`, never spawned during init. The complementary native first-use approval behavior of real Worktrunk is a contract-layer assumption owned by the worktrunk-assumptions domain.
 
-Covers: AC-0603
+#### CONF-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+During init the Worktrunk executable is never spawned and no approval state is mutated.
+
+Proven by case `init-worktrunk-not-spawned` — real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). The Worktrunk (`wt`) executable is resolved by init's preflight but never invoked, so its pre-seeded invocation log stays EMPTY: no `wt` process runs and no approval state is mutated during init, which exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -1920,77 +2105,23 @@ Covers: AC-0603
 - Cursor: Simulated
 
 **Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Copies `seed/wt.toml` → `repo/.config/wt.toml`
-1. Copies `seed/exclude` → `repo/.git/info/exclude`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.git/info/exclude`
 
 ```text
-# local excludes
-scratch/
+./
+└─ repo/
+   └─ .fake-wt.log
 ```
 
-**CLI output** — exit 1
+`repo/.fake-wt.log`
 
-```console
-Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
-  - Existing .config/wt.toml is missing required wtw hooks or uses conflicting commands; add exactly the block(s) below, then rerun init.
+```text
 
-[post-start]
-wtw-sync = "wtw sync --open"
 ```
-
-</details>
-
-#### Case: init preserves an existing all-hooks TOML byte-for-byte
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An existing `.config/wt.toml` carries all three reserved hooks alongside a custom comment and a custom hook. `init` preflight accepts it and never rewrites it: the file is preserved byte-for-byte (custom content, ordering, and comments intact) and `init` exits 0.
-
-Covers: AC-0602
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
 
 **Setup steps** — run before the command
 
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
-1. Copies `seed/wt.toml` → `repo/.config/wt.toml`
 
 **Command**
 
@@ -2000,21 +2131,10 @@ $ wtw init
 
 **Output files**
 
-`repo/.config/wt.toml`
+`repo/.fake-wt.log`
 
-```toml
-# my project hooks
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
+```text
 
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-
-[custom]
-greet = "echo hello"
 ```
 
 **CLI output** — exit 0
@@ -2024,29 +2144,79 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-Preserved:
-.config/wt.toml
+Initialized wtw local automation
 ```
 
 </details>
 
 ## Copy Policy
 
-### WTW-FR-0007 — Copy policy
+### COPY-FR-0001 — Scaffolding the copy policy
 
-When `.worktreeinclude` is absent, `init` scaffolds a documented copy policy carrying exactly the two required control entries (`.config/wt.toml`, `.worktreeinclude`) plus user-editing guidance, with no guessed private-data entries — the user owns and edits the copy policy. This file is authoritative for FR-07; the `check`-side entry findings (AC-07.2) are added by Task 13 and the real-contract native-copy proof (AC-07.3) by Task 15.
+When `.worktreeinclude` is absent, `wtw init` scaffolds a documented copy policy that the user owns and edits. The scaffold carries exactly the two required control entries (`.config/wt.toml` and `.worktreeinclude`) plus user-editing guidance, and guesses no private-data entries of its own. The complementary native copy of selected ignored data by real Worktrunk at pre-start is a contract-layer assumption owned by the worktrunk-assumptions domain.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0701 | A scaffolded `.worktreeinclude` contains the two required control paths and explanatory user-editing guidance, without guessed private-data entries. (spec AC-07.1) | ✅ `init-empty-repo-creates-all` |
-| AC-0702 | `wtw check` FAILs when either required control entry is absent from `.worktreeinclude`, and WARNs (rather than FAILs) for a user entry that currently matches no ignored content. (spec AC-07.2) | ✅ `check-copy-policy-fails-missing-required`, `check-copy-policy-warns-unmatched` |
-| AC-0703 | The real-contract scenario proves native Worktrunk copies selected ignored data and both control files from the primary before creation readiness, including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary. (spec AC-07.3) | ✅ `contract-lifecycle` |
+#### COPY-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: check fails when a required copy-policy control entry is absent
+A scaffolded `.worktreeinclude` contains the two required control paths and explanatory user-editing guidance, without guessed private-data entries.
 
-Description: real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to drop the required `.worktreeinclude` control entry. `check` reports a Copy-policy FAIL (native Worktrunk configuration must stay discoverable in linked worktrees), the summary carries one failure, and the command exits 1. (AC-07.2 FAIL half; a defined failure fixture for AC-11.2.)
+Proven by case `copy-policy-scaffold-controls-only` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). When `.worktreeinclude` is absent, `init` scaffolds it with exactly the two required control entries (`.config/wt.toml` and `.worktreeinclude`) plus user-editing guidance, guessing no private-data entries of its own. The full-file compare proves the scaffold is byte-exact — no invented ignored paths (COPY-FR-0001.AC-0001).
 
-Covers: AC-0702
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Created:
+```
+
+</details>
+
+### COPY-FR-0002 — Copy-policy diagnostics
+
+`wtw check` reports on the copy policy. A missing required control entry is a failure because it breaks the wtw contract; a user-authored entry that currently matches no ignored content is a warning, not a failure, because it may match content the user has yet to create.
+
+#### COPY-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+`wtw check` fails when either required control entry is absent from `.worktreeinclude`.
+
+Proven by case `check-copy-policy-fails-missing-required` — real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to drop the required `.worktreeinclude` control entry. `check` reports a Copy-policy FAIL (native Worktrunk configuration must stay discoverable in linked worktrees), the summary carries one failure, and the command exits 1. (the FAIL half, COPY-FR-0002.AC-0001.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2087,11 +2257,11 @@ FAIL  Required control entry ".worktreeinclude" is missing from .worktreeinclude
 
 </details>
 
-#### Case: check warns (not fails) for a copy-policy entry matching no ignored content
+#### COPY-FR-0002.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to keep both required control entries plus a user entry (`secret-data/`) that currently matches no ignored path. `check` reports that entry as a WARN — never a FAIL — the summary carries one warning and zero failures, and the command exits 0 (a warning-only run). (AC-07.2 WARN half.)
+`wtw check` warns, rather than fails, for a user entry that currently matches no ignored content.
 
-Covers: AC-0702
+Proven by case `check-copy-policy-warns-unmatched` — real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to keep both required control entries plus a user entry (`secret-data/`) that currently matches no ignored path. `check` reports that entry as a WARN — never a FAIL — the summary carries one warning and zero failures, and the command exits 0 (a warning-only run). (the WARN half, COPY-FR-0002.AC-0002.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2132,361 +2302,17 @@ WARN  .worktreeinclude entry "secret-data/" matches no currently ignored path
 
 </details>
 
-#### Case: full real-Worktrunk lifecycle against the built wtw
-
-Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
-
-Covers: AC-0703
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
-
-- Git: Real
-- Worktrunk: Real
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Initialized wtw local automation for this repository.
-```
-
-</details>
-
-#### Case: init creates every canonical artifact and synchronizes linked worktrees
-
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
-
-Covers: AC-0701
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .fake-cursor.log
-   └─ .fake-wt.log
-```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-b ../wt-b`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`repo/repo.code-workspace`
-
-```text
-{
-  "folders": [
-    {
-      "path": "__PROJECT_ROOT__/repo"
-    },
-    {
-      "name": "feature-a",
-      "path": "__PROJECT_ROOT__/wt-a"
-    },
-    {
-      "name": "feature-b",
-      "path": "__PROJECT_ROOT__/wt-b"
-    }
-  ]
-}
-```
-
-`wt-a/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`wt-b/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-b/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Output file constraints**
-
-- `repo/.git/info/exclude` contains `# >>> wtw managed >>>`
-- `repo/.git/info/exclude` contains `.config/wt.toml`
-- `repo/.git/info/exclude` contains `.worktreeinclude`
-- `repo/.git/info/exclude` contains `repo.code-workspace`
-- `repo/.git/info/exclude` contains `# <<< wtw managed <<<`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Created:
-Synchronized
-```
-
-</details>
-
 ## Sync
 
-### WTW-FR-0008 — Synchronization and concurrency
+### SYNC-FR-0001 — Control-file propagation
 
-`wtw sync` resolves the primary worktree from any supported invocation location, acquires ONE repository-wide cross-process lock under the Git common directory, and — while holding it — atomically makes every linked worktree's control files (`.config/wt.toml`, `.worktreeinclude`) byte-identical to the authoritative primary copies, re-enumerates the live Git worktrees, and reconciles the workspace. It copies no other `.worktreeinclude`-selected path. Acquisition waits a documented short timeout, uses the locking library's stale-lock policy with a documented threshold, writes nothing on a timeout, and always releases the lock on both success and error paths.
+`wtw sync` resolves the primary worktree from any supported invocation location and, while holding the repository-wide lock, atomically makes every linked worktree's control files (`.config/wt.toml`, `.worktreeinclude`) byte-identical to the authoritative primary copies. The primary copies are authoritative: divergent linked copies are overwritten.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0801 | `sync` atomically makes every linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the primary copies, overwriting divergent linked control copies. (spec AC-08.1) | ✅ `sync-control-files-byte-identical` |
-| AC-0802 | `sync` does not create, modify, or overwrite any other user-selected `.worktreeinclude` path. (spec AC-08.2) | ✅ `sync-leaves-other-includes-untouched` |
-| AC-0803 | Two deliberately overlapping sync processes serialize through one common-directory lock and finish with folders derived from the final Git state, with no stale older snapshot written last. (spec AC-08.3) | ✅ `sync-concurrent-serializes` |
-| AC-0804 | Lock timeout exits 1 without file writes; an injected error still releases the lock; and a library-recognized stale lock is recoverable according to the documented policy. (spec AC-08.4) | ✅ `sync-injected-error-releases-lock`, `sync-lock-timeout-no-writes`, `sync-stale-lock-recoverable` |
-| AC-0805 | A linked worktree made by raw Git gains canonical control files and a workspace entry after an explicit `sync`. The complementary drift REPORT is proven by `wtw check` (Task 13). (spec AC-08.5) | ✅ `check-reports-raw-git-drift`, `sync-raw-git-worktree-repaired` |
+#### SYNC-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: check reports a raw-git linked worktree as synchronization drift
+`wtw sync` atomically makes every linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the primary copies, overwriting divergent linked control copies.
 
-Description: real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked worktree is created with raw `git worktree add` (which runs no Worktrunk hooks), so it has no control files and is absent from the workspace folders. `check` reports this as Synchronization drift — divergent/missing linked control files AND out-of-date workspace folders — and exits 1. This is the read-only REPORT half of AC-08.5 (the repair is proven by `wtw sync`).
-
-Covers: AC-0805
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  1 linked worktree(s) have missing or divergent control files
-FAIL  Cursor workspace folders are out of date
-```
-
-</details>
-
-#### Case: overlapping syncs serialize and write final Git state
-
-Description: real Git, simulated nothing. A first `sync` is launched in the background and made to hold the one repository lock until a release file appears (test barrier). While it holds the lock, a second linked worktree `wt-b` is created, then the barrier is released. The foreground `sync` contends for the same lock and, because each sync re-enumerates worktrees while holding the lock, the final workspace folders derive from the final Git state (both feature-a and feature-b) — never a stale pre-lock snapshot.
-
-Covers: AC-0803
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-1. Runs `wtw sync` (in the background)
-1. Runs `git worktree add -b feature-b ../wt-b`
-1. Runs `touch .wtw-release`
-
-**Command**
-
-```console
-$ wtw sync
-```
-
-**Output file constraints**
-
-- `repo/repo.code-workspace` contains `feature-a`
-- `repo/repo.code-workspace` contains `feature-b`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Synchronized
-```
-
-</details>
-
-#### Case: sync overwrites divergent linked control files
-
-Description: real Git, simulated nothing. With a real primary and one linked worktree holding DIVERGENT control copies, `sync` atomically makes the linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the authoritative primary copies.
-
-Covers: AC-0801
+Proven by case `sync-control-files-byte-identical` — real Git, simulated nothing. With a real primary and one linked worktree holding DIVERGENT control copies, `sync` atomically makes the linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the authoritative primary copies.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2579,87 +2405,15 @@ Synchronized
 
 </details>
 
-#### Case: an injected error still releases the lock
+### SYNC-FR-0002 — Copy scope limited to control files
 
-Description: real Git, simulated nothing. A first `sync` is driven to throw AFTER acquiring the lock (fault injection via a test-only env var); it exits 1 but its try/finally releases the lock. The foreground `sync` then acquires the lock immediately and succeeds — proving the failed run left no lock behind.
+Synchronization propagates only the two control files. It never applies the user's `.worktreeinclude` copy policy itself, so no other user-selected path is created, modified, or overwritten by `wtw sync`.
 
-Covers: AC-0804
+#### SYNC-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-<details>
-<summary>Evidence, input, command & output</summary>
+`wtw sync` does not create, modify, or overwrite any other user-selected `.worktreeinclude` path.
 
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-1. Runs `wtw sync` (tolerating failure)
-
-**Command**
-
-```console
-$ wtw sync
-```
-
-**Output file constraints**
-
-- `repo/repo.code-workspace` contains `feature-a`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Synchronized
-```
-
-</details>
-
-#### Case: sync touches no other include-selected path
-
-Description: real Git, simulated nothing. The primary `.worktreeinclude` selects `notes.txt` in addition to the two control entries. After `sync`, the linked worktree's `notes.txt` is left byte-for-byte unchanged (sync copies only the control files), while the control files are still made canonical.
-
-Covers: AC-0802
+Proven by case `sync-leaves-other-includes-untouched` — real Git, simulated nothing. The primary `.worktreeinclude` selects `notes.txt` in addition to the two control entries. After `sync`, the linked worktree's `notes.txt` is left byte-for-byte unchanged (sync copies only the control files), while the control files are still made canonical.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2749,11 +2503,98 @@ Synchronized
 
 </details>
 
-#### Case: lock timeout exits 1 and writes nothing
+### SYNC-FR-0003 — Concurrency serialization
 
-Description: real Git, simulated nothing. A fresh (non-stale) mutex directory is pre-created under the Git common directory to simulate a live lock holder. `sync` waits the short documented timeout, then exits 1 without performing any write — the primary workspace file is left byte-for-byte unchanged.
+A single repository-wide cross-process lock under the Git common directory serializes overlapping synchronizations. After serialization the workspace reflects the final Git state, never an older snapshot written last by a process that lost the race.
 
-Covers: AC-0804
+#### SYNC-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+Two deliberately overlapping sync processes serialize through one common-directory lock and finish with folders derived from the final Git state, with no stale older snapshot written last.
+
+Proven by case `sync-concurrent-serializes` — real Git, simulated nothing. A first `sync` is launched in the background and made to hold the one repository lock until a release file appears (test barrier). While it holds the lock, a second linked worktree `wt-b` is created, then the barrier is released. The foreground `sync` contends for the same lock and, because each sync re-enumerates worktrees while holding the lock, the final workspace folders derive from the final Git state (both feature-a and feature-b) — never a stale pre-lock snapshot.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Not exercised
+- Cursor: Not exercised
+
+**Local project** — ran from `repo/`
+
+```text
+./
+└─ repo/
+   ├─ .config/
+   │  └─ wt.toml
+   └─ .worktreeinclude
+```
+
+`repo/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`repo/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `wtw sync` (in the background)
+1. Runs `git worktree add -b feature-b ../wt-b`
+1. Runs `touch .wtw-release`
+
+**Command**
+
+```console
+$ wtw sync
+```
+
+**Output file constraints**
+
+- `repo/repo.code-workspace` contains `feature-a`
+- `repo/repo.code-workspace` contains `feature-b`
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Synchronized
+```
+
+</details>
+
+### SYNC-FR-0004 — Lock lifecycle and recovery
+
+Lock acquisition waits a documented short timeout and, on expiry, writes nothing. The lock is always released on both success and error paths, and a lock the locking library recognizes as stale is recoverable under the library's documented stale-lock threshold.
+
+#### SYNC-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A lock-acquisition timeout exits 1 without any file writes.
+
+Proven by case `sync-lock-timeout-no-writes` — real Git, simulated nothing. A fresh (non-stale) mutex directory is pre-created under the Git common directory to simulate a live lock holder. `sync` waits the short documented timeout, then exits 1 without performing any write — the primary workspace file is left byte-for-byte unchanged.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2838,11 +2679,11 @@ Error: Another wtw sync is holding the repository lock; timed out after 300ms. N
 
 </details>
 
-#### Case: raw-git linked worktree gains control files and workspace entry
+#### SYNC-FR-0004.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated nothing. A linked worktree created by raw `git worktree add` (which runs no Worktrunk hooks) starts with no control files. An explicit `sync` repairs the drift: the worktree gains canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace folder entry. (The complementary drift REPORT is proven by `wtw check` in Task 13.)
+An injected error during synchronization still releases the lock.
 
-Covers: AC-0805
+Proven by case `sync-injected-error-releases-lock` — real Git, simulated nothing. A first `sync` is driven to throw AFTER acquiring the lock (fault injection via a test-only env var); it exits 1 but its try/finally releases the lock. The foreground `sync` then acquires the lock immediately and succeeds — proving the failed run left no lock behind.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -2890,35 +2731,12 @@ wtw-sync = "wtw sync"
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
 1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `wtw sync` (tolerating failure)
 
 **Command**
 
 ```console
 $ wtw sync
-```
-
-**Output files**
-
-`wt-a/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
 ```
 
 **Output file constraints**
@@ -2937,11 +2755,11 @@ Synchronized
 
 </details>
 
-#### Case: a recognized stale lock is recovered
+#### SYNC-FR-0004.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated nothing. A mutex directory is pre-created and back-dated far past the stale threshold. `sync` recognizes the abandoned lock per the library's documented stale policy, recovers it, and completes successfully.
+A library-recognized stale lock is recoverable according to the documented policy.
 
-Covers: AC-0804
+Proven by case `sync-stale-lock-recoverable` — real Git, simulated nothing. A mutex directory is pre-created and back-dated far past the stale threshold. `sync` recognizes the abandoned lock per the library's documented stale policy, recovers it, and completes successfully.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3014,71 +2832,15 @@ Synchronized
 
 </details>
 
-## Cursor Workspace
+### SYNC-FR-0005 — Repair of raw-Git drift
 
-### WTW-FR-0009 — Cursor workspace preservation and reconciliation
+A linked worktree created by raw `git worktree add` bypasses the Worktrunk hooks, so it starts without canonical control files or a workspace entry. `wtw check` reports this as drift, and an explicit `wtw sync` repairs it.
 
-The root Cursor workspace file (`<primary-directory-name>.code-workspace`) is user-editable JSONC that lives only in the primary worktree and is never selected by `.worktreeinclude`. `wtw` owns only its top-level `folders` property. Synchronization edits only `folders` in valid JSONC, preserving comments, formatting, property order, and every unrelated property; invalid JSONC or a non-object top level fails without writing; and a missing workspace is recreated with the minimal scaffold and the current folders. This file is authoritative for FR-09; the `init`-side criteria (creation, folder-list ordering, and missing/prunable exclusion) are added by Task 12.
+#### SYNC-FR-0005.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-0901 | `init` creates a missing `<primary-directory-name>.code-workspace`; adopts an existing valid-JSONC top-level object while preserving everything outside `folders`; and fails without writes for invalid JSONC or a non-object top level. (spec AC-09.1) | ✅ `init-adopts-existing-workspace`, `init-empty-repo-creates-all`, `init-invalid-workspace-no-writes` |
-| AC-0902 | Synchronization modifies only top-level `folders` in valid JSONC and preserves comments, formatting, property order, and all unrelated properties byte-for-byte outside the edit span. (spec AC-09.2) | ✅ `sync-workspace-preserves-jsonc` |
-| AC-0903 | Invalid JSONC (or a non-object top level) causes sync to exit 1 without changing the workspace file. (spec AC-09.3) | ✅ `sync-invalid-jsonc-no-write` |
-| AC-0904 | The reconciled folder list contains the primary first and every existing linked worktree sorted by display name and then normalized absolute path, using deterministic branch and detached labels. (spec AC-09.4) | ✅ `init-empty-repo-creates-all` |
-| AC-0905 | Missing/prunable registrations are excluded from the reconciled folder list and are not pruned by any `wtw` command. The complementary `check` WARNING with native cleanup guidance is proven by `wtw check` (Task 13). (spec AC-09.5) | ✅ `check-warns-stale-registration`, `init-prunable-excluded` |
-| AC-0906 | Plain `sync` recreates a missing workspace with the minimal scaffold and the current managed folders. (spec AC-09.6) | ✅ `check-reports-missing-workspace`, `sync-missing-workspace-recreated` |
+`wtw check` reports a linked worktree created by raw Git as drift.
 
-#### Case: check reports a missing Cursor workspace before repair
-
-Description: real Git, simulated Worktrunk/Cursor. After a healthy `init`, the primary workspace file is deleted. `check` reports the Cursor workspace as missing (a FAIL; a plain `sync` will recreate it) and marks the Synchronization folder-drift check SKIPPED rather than cascading a false failure. The command exits 1. This is the `check`-side report half of AC-09.6.
-
-Covers: AC-0906
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-1. Runs `rm repo.code-workspace`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Cursor workspace repo.code-workspace is missing; run wtw sync to recreate it.
-SKIPPED  Workspace folder drift not checked because the workspace file is missing
-```
-
-</details>
-
-#### Case: check warns about a stale worktree registration with cleanup guidance
-
-Description: real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked worktree is registered and then its directory is deleted, leaving a missing/prunable registration. `check` excludes it from the folder list (no drift) but reports a WARN under Cursor workspace with native cleanup guidance (`git worktree prune` / `git worktree remove`); `wtw` never prunes it. A warning-only run exits 0. (AC-09.5 check-side WARNING.)
-
-Covers: AC-0905
+Proven by case `check-reports-raw-git-drift` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked worktree is created with raw `git worktree add` (which runs no Worktrunk hooks), so it has no control files and is absent from the workspace folders. `check` reports this as Synchronization drift — divergent/missing linked control files AND out-of-date workspace folders — and exits 1. This is the read-only REPORT half of SYNC-FR-0005 (SYNC-FR-0005.AC-0001; the repair is proven by `wtw sync`).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3099,7 +2861,6 @@ _Empty — no committed workspace files._
 1. Runs `git commit --allow-empty -m init`
 1. Runs `wtw init`
 1. Runs `git worktree add -b feature-a ../wt-a`
-1. Runs `rm -rf ../wt-a`
 
 **Command**
 
@@ -3107,442 +2868,24 @@ _Empty — no committed workspace files._
 $ wtw check
 ```
 
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-WARN  1 Git worktree registration(s) are missing or prunable
-`git worktree prune`
-1 warn, 0 fail
-```
-
-</details>
-
-#### Case: init adopts an existing valid workspace, preserving everything outside folders
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary already has a valid-JSONC `<repo>.code-workspace` carrying a comment and a user `settings` property alongside an empty `folders`. `init` adopts it: it reconciles only `folders` (primary plus the existing linked worktree) and preserves the comment and the unrelated `settings` property.
-
-Covers: AC-0901
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-1. Copies `seed/workspace` → `repo/repo.code-workspace`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output file constraints**
-
-- `repo/repo.code-workspace` contains `// my workspace`
-- `repo/repo.code-workspace` contains `editor.tabSize`
-- `repo/repo.code-workspace` contains `feature-a`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Synchronized
-updated
-```
-
-</details>
-
-#### Case: init creates every canonical artifact and synchronizes linked worktrees
-
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
-
-Covers: AC-0901, AC-0904
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .fake-cursor.log
-   └─ .fake-wt.log
-```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-b ../wt-b`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`repo/repo.code-workspace`
-
-```text
-{
-  "folders": [
-    {
-      "path": "__PROJECT_ROOT__/repo"
-    },
-    {
-      "name": "feature-a",
-      "path": "__PROJECT_ROOT__/wt-a"
-    },
-    {
-      "name": "feature-b",
-      "path": "__PROJECT_ROOT__/wt-b"
-    }
-  ]
-}
-```
-
-`wt-a/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`wt-b/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-b/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Output file constraints**
-
-- `repo/.git/info/exclude` contains `# >>> wtw managed >>>`
-- `repo/.git/info/exclude` contains `.config/wt.toml`
-- `repo/.git/info/exclude` contains `.worktreeinclude`
-- `repo/.git/info/exclude` contains `repo.code-workspace`
-- `repo/.git/info/exclude` contains `# <<< wtw managed <<<`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Created:
-Synchronized
-```
-
-</details>
-
-#### Case: an invalid workspace JSONC makes init perform no writes
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary `<repo>.code-workspace` is invalid JSONC. `init` detects it in the preflight, exits 1, and writes nothing: the workspace file and the user-authored `info/exclude` are byte-for-byte unchanged (no managed block is added, no scaffolds are created).
-
-Covers: AC-0901
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Copies `seed/workspace` → `repo/repo.code-workspace`
-1. Copies `seed/exclude` → `repo/.git/info/exclude`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
-
-`repo/.git/info/exclude`
-
-```text
-# local excludes
-scratch/
-```
-
-`repo/repo.code-workspace`
-
-```text
-{ this is not : valid json ]
-```
-
 **CLI output** — exit 1
 
-```console
-Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
-  - The Cursor workspace repo.code-workspace is not valid JSONC; fix it before running init.
-```
-
-</details>
-
-#### Case: init excludes a missing worktree from folders and never prunes it
-
-Description: real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A linked worktree is registered and then its directory is deleted, leaving a missing/prunable registration. `init`'s synchronization excludes it from the reconciled workspace `folders` and never prunes the registration: Git's worktree metadata for it remains after `init` exits 0.
-
-Covers: AC-0905
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-1. Runs `rm -rf ../wt-a`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output file constraints**
-
-- `repo/.git/worktrees/wt-a/HEAD` contains `refs/heads/feature-a`
-- `repo/repo.code-workspace` does not contain `feature-a`
-- `repo/repo.code-workspace` does not contain `wt-a`
-
-**CLI output** — exit 0
-
 _No exact stdout or stderr asserted._
 
 **Required stdout substrings**
 
 ```text
-Synchronized
+FAIL  1 linked worktree(s) have missing or divergent control files
+FAIL  Cursor workspace folders are out of date
 ```
 
 </details>
 
-#### Case: invalid JSONC fails sync without changing the workspace
+#### SYNC-FR-0005.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated nothing. The primary workspace file is invalid JSONC. `sync` exits 1 and leaves the file byte-for-byte unchanged (no partial or overwritten workspace).
+After an explicit `wtw sync`, a linked worktree created by raw Git gains canonical control files and a workspace entry.
 
-Covers: AC-0903
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   ├─ .worktreeinclude
-   └─ repo.code-workspace
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-`repo/repo.code-workspace`
-
-```text
-{
-  "folders": [
-    "unterminated string
-  ]
-}
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw sync
-```
-
-**Output files**
-
-`repo/repo.code-workspace`
-
-```text
-{
-  "folders": [
-    "unterminated string
-  ]
-}
-```
-
-**CLI output** — exit 1
-
-```console
-Error: The Cursor workspace repo.code-workspace is not valid JSONC; no changes were made.
-```
-
-</details>
-
-#### Case: sync recreates a missing workspace with the minimal scaffold
-
-Description: real Git, simulated nothing. No workspace file exists in the primary. Plain `sync` recreates the minimal `<primary>.code-workspace` scaffold carrying the current managed folders (primary plus the existing linked worktree).
-
-Covers: AC-0906
+Proven by case `sync-raw-git-worktree-repaired` — real Git, simulated nothing. A linked worktree created by raw `git worktree add` (which runs no Worktrunk hooks) starts with no control files. An explicit `sync` repairs the drift: the worktree gains canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace folder entry. (The complementary drift REPORT is proven by `wtw check` in Task 13.)
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3597,9 +2940,32 @@ wtw-sync = "wtw sync"
 $ wtw sync
 ```
 
+**Output files**
+
+`wt-a/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`wt-a/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
 **Output file constraints**
 
-- `repo/repo.code-workspace` contains `"folders"`
 - `repo/repo.code-workspace` contains `feature-a`
 
 **CLI output** — exit 0
@@ -3610,16 +2976,180 @@ _No exact stdout or stderr asserted._
 
 ```text
 Synchronized
-created
 ```
 
 </details>
 
-#### Case: sync edits only folders and preserves surrounding JSONC
+## Cursor Workspace
 
-Description: real Git, simulated nothing. The primary workspace is valid JSONC with a comment and an unrelated `settings` property. `sync` edits ONLY the top-level `folders` (adding the linked worktree) while preserving the comment, the `settings` block, and formatting.
+### WORK-FR-0001 — Workspace creation and adoption at init
 
-Covers: AC-0902
+The root Cursor workspace file (`<primary-directory-name>.code-workspace`) is user-editable JSONC that lives only in the primary worktree and is never selected by `.worktreeinclude`. `wtw` owns only its top-level `folders` property. `wtw init` creates the file when absent and adopts an existing valid-JSONC top-level object, preserving everything outside `folders`; unparseable JSONC or a non-object top level is a preflight conflict.
+
+#### WORK-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+`wtw init` creates a missing `<primary-directory-name>.code-workspace`.
+
+Proven by case `init-creates-missing-workspace` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary worktree has no `<primary-directory-name>.code-workspace`. `init` creates it, so the previously-absent `repo.code-workspace` exists afterwards carrying the top-level `folders` property with the primary worktree (WORK-FR-0001.AC-0001).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output file constraints**
+
+- `repo/repo.code-workspace` contains `"folders"`
+- `repo/repo.code-workspace` contains `/repo`
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Created:
+repo.code-workspace
+```
+
+</details>
+
+#### WORK-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+`wtw init` adopts an existing valid-JSONC top-level object while preserving everything outside `folders`.
+
+Proven by case `init-adopts-existing-workspace` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary already has a valid-JSONC `<repo>.code-workspace` carrying a comment and a user `settings` property alongside an empty `folders`. `init` adopts it: it reconciles only `folders` (primary plus the existing linked worktree) and preserves the comment and the unrelated `settings` property.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Copies `seed/workspace` → `repo/repo.code-workspace`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output file constraints**
+
+- `repo/repo.code-workspace` contains `// my workspace`
+- `repo/repo.code-workspace` contains `editor.tabSize`
+- `repo/repo.code-workspace` contains `feature-a`
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Synchronized
+updated
+```
+
+</details>
+
+#### WORK-FR-0001.AC-0003 — verified by `case` (a dedicated end-to-end case)
+
+`wtw init` fails without writes when the workspace is invalid JSONC or has a non-object top level.
+
+Proven by case `init-invalid-workspace-no-writes` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The primary `<repo>.code-workspace` is invalid JSONC. `init` detects it in the preflight, exits 1, and writes nothing: the workspace file and the user-authored `info/exclude` are byte-for-byte unchanged (no managed block is added, no scaffolds are created).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Copies `seed/workspace` → `repo/repo.code-workspace`
+1. Copies `seed/exclude` → `repo/.git/info/exclude`
+
+**Command**
+
+```console
+$ wtw init
+```
+
+**Output files**
+
+`repo/.git/info/exclude`
+
+```text
+# local excludes
+scratch/
+```
+
+`repo/repo.code-workspace`
+
+```text
+{ this is not : valid json ]
+```
+
+**CLI output** — exit 1
+
+```console
+Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
+  - The Cursor workspace repo.code-workspace is not valid JSONC; fix it before running init.
+```
+
+</details>
+
+### WORK-FR-0002 — Surgical folders edit on sync
+
+Synchronization edits only the top-level `folders` property in valid JSONC. Comments, formatting, property order, and every unrelated property are preserved byte-for-byte outside the edited span.
+
+#### WORK-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+Synchronization modifies only top-level `folders` and preserves comments, formatting, property order, and all unrelated properties byte-for-byte outside the edit span.
+
+Proven by case `sync-workspace-preserves-jsonc` — real Git, simulated nothing. The primary workspace is valid JSONC with a comment and an unrelated `settings` property. `sync` edits ONLY the top-level `folders` (adding the linked worktree) while preserving the comment, the `settings` block, and formatting.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3706,23 +3236,15 @@ Synchronized
 
 </details>
 
-## Cursor Launch
+### WORK-FR-0003 — Invalid-JSONC guard
 
-### WTW-FR-0010 — Cursor launch behavior
+A workspace file that is not valid JSONC, or whose top level is not an object, cannot be edited surgically. Synchronization refuses to write it and `wtw check` reports it as a failure.
 
-Plain `sync` never opens Cursor. `sync --open` launches `cursor` with the exact absolute primary-worktree workspace path exactly once, strictly after every synchronization write has succeeded. If the launch fails after those writes, the synchronized state remains in place (no rollback) and the command exits 1 with the launch error. Direct synchronization blocks until the writes and any launch attempt complete before the command returns. `init` and `check` never invoke Cursor. Automated suites drive a fake `cursor` shim that only records the workspace path it was asked to open and never spawns a GUI.
+#### WORK-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-1001 | Plain `sync` (no `--open`) never invokes Cursor: the fake-Cursor invocation log stays empty. (spec AC-10.1; `init`/`check` no-invoke assertions are added by Tasks 12/13.) | ✅ `init-empty-repo-creates-all`, `sync-open-plain-no-invoke` |
-| AC-1002 | `sync --open` invokes the fake Cursor exactly once with the exact absolute root workspace path, only after the synchronization writes succeed. (spec AC-10.2) | ✅ `sync-open-launches-cursor-once` |
-| AC-1003 | A simulated Cursor launch failure after the writes preserves the synchronized files and exits 1 with the launch error. (spec AC-10.3) | ✅ `sync-open-launch-failure-preserves` |
+Invalid JSONC or a non-object top level causes sync to exit 1 without changing the workspace file.
 
-#### Case: init creates every canonical artifact and synchronizes linked worktrees
-
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned). On an empty supported repository with two linked worktrees, `init` creates the canonical `.config/wt.toml`, `.worktreeinclude`, and `<repo>.code-workspace`, reconciles the managed `info/exclude` block, propagates control files to both linked worktrees, and orders the workspace folders (primary first, then the linked worktrees sorted by display name). It launches neither Cursor nor Worktrunk — both pre-seeded invocation logs stay EMPTY — and exits 0.
-
-Covers: AC-1001
+Proven by case `sync-invalid-jsonc-no-write` — real Git, simulated nothing. The primary workspace file is invalid JSONC. `sync` exits 1 and leaves the file byte-for-byte unchanged (no partial or overwritten workspace).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3730,44 +3252,19 @@ Covers: AC-1001
 **Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
 
 - Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
+- Worktrunk: Not exercised
+- Cursor: Not exercised
 
 **Local project** — ran from `repo/`
 
 ```text
 ./
 └─ repo/
-   ├─ .fake-cursor.log
-   └─ .fake-wt.log
+   ├─ .config/
+   │  └─ wt.toml
+   ├─ .worktreeinclude
+   └─ repo.code-workspace
 ```
-
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-b ../wt-b`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw init
-```
-
-**Output files**
 
 `repo/.config/wt.toml`
 
@@ -3782,18 +3279,6 @@ wtw-sync = "wtw sync --open"
 wtw-sync = "wtw sync"
 ```
 
-`repo/.fake-cursor.log`
-
-```text
-
-```
-
-`repo/.fake-wt.log`
-
-```text
-
-```
-
 `repo/.worktreeinclude`
 
 ```text
@@ -3802,6 +3287,145 @@ wtw-sync = "wtw sync"
 
 # Add other ignored files and directories below.
 ```
+
+`repo/repo.code-workspace`
+
+```text
+{
+  "folders": [
+    "unterminated string
+  ]
+}
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+
+**Command**
+
+```console
+$ wtw sync
+```
+
+**Output files**
+
+`repo/repo.code-workspace`
+
+```text
+{
+  "folders": [
+    "unterminated string
+  ]
+}
+```
+
+**CLI output** — exit 1
+
+```console
+Error: The Cursor workspace repo.code-workspace is not valid JSONC; no changes were made.
+```
+
+</details>
+
+#### WORK-FR-0003.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+`wtw check` reports a failure for a workspace file that is invalid JSONC.
+
+Proven by case `check-invalid-jsonc-workspace-fails` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, the primary `repo.code-workspace` is overwritten with invalid JSONC. Because a workspace that is not valid JSONC cannot be edited surgically, `check` emits a Cursor workspace FAIL naming the file and exits 1 (WORK-FR-0003.AC-0002; the sync-side no-write half is proven by `sync-invalid-jsonc-no-write`).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+```text
+./
+└─ bad-workspace
+```
+
+`bad-workspace`
+
+```text
+{
+  "folders": [
+    "unterminated string
+  ]
+}
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+1. Copies `fixture/bad-workspace` → `repo/repo.code-workspace`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Cursor workspace repo.code-workspace is not valid JSONC.
+1 fail
+```
+
+</details>
+
+### WORK-FR-0004 — Deterministic folder-list reconciliation
+
+The reconciled `folders` list is deterministic: the primary worktree comes first, then every existing linked worktree sorted by display name and then by normalized absolute path, using deterministic branch and detached labels.
+
+#### WORK-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+The reconciled folder list contains the primary first and every existing linked worktree sorted by display name and then normalized absolute path, using deterministic branch and detached labels.
+
+Proven by case `sync-folders-sorted-deterministically` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). Two linked worktrees are added in reverse display-name order (`feature-b` before `feature-a`). After `init` and a plain `sync`, the reconciled `folders` list is deterministic: the primary comes first, then the linked worktrees sorted by display name (`feature-a` before `feature-b`) — insertion order does not leak into the result (WORK-FR-0004.AC-0001).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-b ../wt-b`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw sync
+```
+
+**Output files**
 
 `repo/repo.code-workspace`
 
@@ -3823,57 +3447,59 @@ wtw-sync = "wtw sync"
 }
 ```
 
-`wt-a/.config/wt.toml`
+**CLI output** — exit 0
 
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
+_No exact stdout or stderr asserted._
 
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
+**Required stdout substrings**
 
 ```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
+Synchronized
 ```
 
-`wt-b/.config/wt.toml`
+</details>
 
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
+### WORK-FR-0005 — Missing and prunable registrations
 
-[post-start]
-wtw-sync = "wtw sync --open"
+A worktree registration whose path is missing or prunable is excluded from the reconciled folder list. `wtw` never prunes such registrations itself; `wtw check` warns about them and points at the native Worktrunk cleanup.
 
-[post-remove]
-wtw-sync = "wtw sync"
-```
+#### WORK-FR-0005.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-`wt-b/.worktreeinclude`
+Missing or prunable registrations are excluded from the reconciled folder list and are not pruned by any `wtw` command.
 
-```text
-.config/wt.toml
-.worktreeinclude
+Proven by case `init-prunable-excluded` — real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A linked worktree is registered and then its directory is deleted, leaving a missing/prunable registration. `init`'s synchronization excludes it from the reconciled workspace `folders` and never prunes the registration: Git's worktree metadata for it remains after `init` exits 0.
 
-# Add other ignored files and directories below.
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `rm -rf ../wt-a`
+
+**Command**
+
+```console
+$ wtw init
 ```
 
 **Output file constraints**
 
-- `repo/.git/info/exclude` contains `# >>> wtw managed >>>`
-- `repo/.git/info/exclude` contains `.config/wt.toml`
-- `repo/.git/info/exclude` contains `.worktreeinclude`
-- `repo/.git/info/exclude` contains `repo.code-workspace`
-- `repo/.git/info/exclude` contains `# <<< wtw managed <<<`
+- `repo/.git/worktrees/wt-a/HEAD` contains `refs/heads/feature-a`
+- `repo/repo.code-workspace` does not contain `feature-a`
+- `repo/repo.code-workspace` does not contain `wt-a`
 
 **CLI output** — exit 0
 
@@ -3882,17 +3508,67 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-Created:
 Synchronized
 ```
 
 </details>
 
-#### Case: a Cursor launch failure after writes preserves files and exits 1
+#### WORK-FR-0005.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Cursor failure. The fake `cursor` is driven to exit non-zero via `FAKE_CURSOR_FAIL` AFTER recording its invocation. Because the launch is gated strictly after every synchronization write, the reconciled workspace is already on disk: the command exits 1 with the launch error on stderr, and the synchronized workspace file is left in place (no rollback).
+`wtw check` warns for a missing or prunable registration and gives native cleanup guidance.
 
-Covers: AC-1003
+Proven by case `check-warns-stale-registration` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked worktree is registered and then its directory is deleted, leaving a missing/prunable registration. `check` excludes it from the folder list (no drift) but reports a WARN under Cursor workspace with native cleanup guidance (`git worktree prune` / `git worktree remove`); `wtw` never prunes it. A warning-only run exits 0. (the check-side WARNING, WORK-FR-0005.AC-0002.)
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `rm -rf ../wt-a`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+WARN  1 Git worktree registration(s) are missing or prunable
+`git worktree prune`
+1 warn, 0 fail
+```
+
+</details>
+
+### WORK-FR-0006 — Recreating a missing workspace on sync
+
+If the workspace file has gone missing, `wtw check` reports it as missing and a plain `wtw sync` recreates it from the minimal scaffold populated with the current managed folders, so the file is restored without requiring `wtw init`.
+
+#### WORK-FR-0006.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+Plain `wtw sync` recreates a missing workspace with the minimal scaffold and the current managed folders.
+
+Proven by case `sync-missing-workspace-recreated` — real Git, simulated nothing. No workspace file exists in the primary. Plain `sync` recreates the minimal `<primary>.code-workspace` scaffold carrying the current managed folders (primary plus the existing linked worktree).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -3901,7 +3577,7 @@ Covers: AC-1003
 
 - Git: Real
 - Worktrunk: Not exercised
-- Cursor: Simulated
+- Cursor: Not exercised
 
 **Local project** — ran from `repo/`
 
@@ -3944,106 +3620,83 @@ wtw-sync = "wtw sync"
 **Command**
 
 ```console
-$ wtw sync --open
+$ wtw sync
 ```
 
 **Output file constraints**
 
-- `repo/.fake-cursor.log` contains `repo.code-workspace`
+- `repo/repo.code-workspace` contains `"folders"`
 - `repo/repo.code-workspace` contains `feature-a`
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Synchronized
+created
+```
+
+</details>
+
+#### WORK-FR-0006.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+`wtw check` reports the root workspace file as missing before repair.
+
+Proven by case `check-reports-missing-workspace` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, the primary workspace file is deleted. `check` reports the Cursor workspace as missing (a FAIL; a plain `sync` will recreate it) and marks the Synchronization folder-drift check SKIPPED rather than cascading a false failure. The command exits 1. This is the `check`-side report half of WORK-FR-0006 (WORK-FR-0006.AC-0002).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+1. Runs `rm repo.code-workspace`
+
+**Command**
+
+```console
+$ wtw check
+```
 
 **CLI output** — exit 1
 
-```console
-Error: Failed to launch Cursor for workspace __PROJECT_ROOT__/repo/repo.code-workspace (exit 1): fake-cursor: simulated launch failure
-```
-
-</details>
-
-#### Case: sync --open launches Cursor exactly once with the absolute workspace path
-
-Description: real Git, simulated Cursor. After every synchronization write succeeds, `sync --open` launches the fake `cursor` exactly once with the exact ABSOLUTE root workspace path. The fake shim appends one JSON line per invocation; a full-file compare of the invocation log proves EXACTLY ONE entry carrying the exact absolute workspace path (never a GUI is opened).
-
-Covers: AC-1002
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw sync --open
-```
-
-**Output files**
-
-`repo/.fake-cursor.log`
-
-```text
-{"argv":["__PROJECT_ROOT__/repo/repo.code-workspace"],"cwd":"__PROJECT_ROOT__/repo"}
-```
-
-**CLI output** — exit 0
-
 _No exact stdout or stderr asserted._
 
 **Required stdout substrings**
 
 ```text
-Synchronized
+FAIL  Cursor workspace repo.code-workspace is missing; run wtw sync to recreate it.
+SKIPPED  Workspace folder drift not checked because the workspace file is missing
 ```
 
 </details>
 
-#### Case: plain sync never invokes Cursor
+## Cursor Launch
 
-Description: real Git, simulated Cursor. `WTW_CURSOR_BIN` points at the fake `cursor` shim, but plain `sync` (no `--open`) must never launch it. A pre-seeded, empty invocation log is left EMPTY after the run, proving the launch path was never taken even though the seam is wired.
+### CURSOR-FR-0001 — Commands that never launch Cursor
 
-Covers: AC-1001
+Only `sync --open` may launch Cursor. `wtw init`, `wtw check`, and a plain `wtw sync` never invoke the editor. Automated suites drive a fake `cursor` shim that records the workspace path it is asked to open and never spawns a GUI, so a never-launched command leaves the invocation log empty.
+
+#### CURSOR-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+Plain `wtw sync` leaves the fake-Cursor invocation log empty.
+
+Proven by case `sync-open-plain-no-invoke` — real Git, simulated Cursor. `WTW_CURSOR_BIN` points at the fake `cursor` shim, but plain `sync` (no `--open`) must never launch it. A pre-seeded, empty invocation log is left EMPTY after the run, proving the launch path was never taken even though the seam is wired.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4125,24 +3778,11 @@ Synchronized
 
 </details>
 
-## Diagnostics
+#### CURSOR-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-### WTW-FR-0011 — Diagnostics
+`wtw init` leaves the fake-Cursor invocation log empty.
 
-`wtw check` is a READ-ONLY aggregate diagnostic. It acquires no lock, opens no Cursor, and reports findings under the seven stable categories in order — Repository, Dependencies, Privacy, Worktrunk, Copy policy, Synchronization, Cursor workspace — with `PASS`/`WARN`/`FAIL` severities (and `SKIPPED` for a dependent check a missing prerequisite made unrunnable). It ends with deterministic severity counts, exits 0 when no failure exists (warnings included), and exits 1 when any failure exists. When a prerequisite is unavailable it marks dependent checks skipped instead of emitting cascading false failures, and it never changes repository, Worktrunk, approval, lock, or Cursor state.
-
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-1101 | A healthy fixture prints every stable category in order, contains only pass findings, prints deterministic counts, performs no writes or Cursor call, and exits 0. (spec AC-11.1) | ✅ `check-healthy-all-pass` |
-| AC-1102 | A warning-only fixture exits 0; each defined failure fixture exits 1; both print aggregate counts matching the emitted findings. (spec AC-11.2) | ✅ `check-copy-policy-fails-missing-required`, `check-copy-policy-warns-unmatched` |
-| AC-1103 | A fixture with an unavailable prerequisite marks dependent checks skipped and does not emit misleading cascaded failures. (spec AC-11.3) | ✅ `check-nonrepo-skips-dependents` |
-| AC-1104 | A before/after snapshot proves `check` never changes repository, Worktrunk, approval, lock, or Cursor state. (spec AC-11.4) | ✅ `check-no-writes-snapshot` |
-
-#### Case: check fails when a required copy-policy control entry is absent
-
-Description: real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to drop the required `.worktreeinclude` control entry. `check` reports a Copy-policy FAIL (native Worktrunk configuration must stay discoverable in linked worktrees), the summary carries one failure, and the command exits 1. (AC-07.2 FAIL half; a defined failure fixture for AC-11.2.)
-
-Covers: AC-1102
+Proven by case `init-no-cursor-launch` — real Git, simulated Cursor. `WTW_CURSOR_BIN` points at the fake `cursor` shim, but `init` must never launch it — only `sync --open` may. A pre-seeded, empty invocation log is left EMPTY after the run, proving the launch path was never taken even though the seam is wired (CURSOR-FR-0001.AC-0002).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4154,65 +3794,37 @@ Covers: AC-1102
 - Cursor: Simulated
 
 **Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-1. Copies `variants/worktreeinclude` → `repo/.worktreeinclude`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
 
 ```text
-FAIL  Required control entry ".worktreeinclude" is missing from .worktreeinclude
-0 warn, 1 fail
+./
+└─ repo/
+   └─ .fake-cursor.log
 ```
 
-</details>
+`repo/.fake-cursor.log`
 
-#### Case: check warns (not fails) for a copy-policy entry matching no ignored content
+```text
 
-Description: real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is rewritten to keep both required control entries plus a user entry (`secret-data/`) that currently matches no ignored path. `check` reports that entry as a WARN — never a FAIL — the summary carries one warning and zero failures, and the command exits 0 (a warning-only run). (AC-07.2 WARN half.)
-
-Covers: AC-1102
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
+```
 
 **Setup steps** — run before the command
 
 1. Runs `git init -b main .`
 1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-1. Copies `variants/worktreeinclude` → `repo/.worktreeinclude`
+1. Runs `git worktree add -b feature-a ../wt-a`
 
 **Command**
 
 ```console
-$ wtw check
+$ wtw init
+```
+
+**Output files**
+
+`repo/.fake-cursor.log`
+
+```text
+
 ```
 
 **CLI output** — exit 0
@@ -4222,17 +3834,252 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-WARN  .worktreeinclude entry "secret-data/" matches no currently ignored path
-1 warn, 0 fail
+Created:
 ```
 
 </details>
 
-#### Case: check prints every category in order with only PASS findings and exits 0
+#### CURSOR-FR-0001.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk/Cursor (each resolved on PATH; only `wt --version` is spawned, read-only). On a freshly initialized single-worktree repository, `check` prints the seven stable categories in their fixed order, every finding is PASS, the summary counts are deterministic, no Cursor launch occurs, and it exits 0. The full-stdout compare proves the exact category order and counts. Running from the primary root also proves context resolution (AC-03.1).
+`wtw check` leaves the fake-Cursor invocation log empty.
 
-Covers: AC-1101
+Proven by case `check-no-cursor-launch` — real Git, simulated Worktrunk/Cursor. `WTW_CURSOR_BIN` points at the fake `cursor` shim, but `check` is read-only and must never launch it — only `sync --open` may. After a healthy `init`, `check` runs and the pre-seeded, empty invocation log is left EMPTY, proving the launch path was never taken (CURSOR-FR-0001.AC-0003).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+```text
+./
+└─ repo/
+   └─ .fake-cursor.log
+```
+
+`repo/.fake-cursor.log`
+
+```text
+
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**Output files**
+
+`repo/.fake-cursor.log`
+
+```text
+
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Summary:
+```
+
+</details>
+
+### CURSOR-FR-0002 — Launch on sync --open
+
+`sync --open` launches `cursor` with the exact absolute primary-worktree workspace path exactly once, strictly after every synchronization write has succeeded. Direct synchronization blocks until the writes and the launch attempt complete before the command returns.
+
+#### CURSOR-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+`sync --open` invokes the fake Cursor exactly once with the exact absolute root workspace path, only after the synchronization writes succeed.
+
+Proven by case `sync-open-launches-cursor-once` — real Git, simulated Cursor. After every synchronization write succeeds, `sync --open` launches the fake `cursor` exactly once with the exact ABSOLUTE root workspace path. The fake shim appends one JSON line per invocation; a full-file compare of the invocation log proves EXACTLY ONE entry carrying the exact absolute workspace path (never a GUI is opened).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Not exercised
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+```text
+./
+└─ repo/
+   ├─ .config/
+   │  └─ wt.toml
+   └─ .worktreeinclude
+```
+
+`repo/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`repo/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+
+**Command**
+
+```console
+$ wtw sync --open
+```
+
+**Output files**
+
+`repo/.fake-cursor.log`
+
+```text
+{"argv":["__PROJECT_ROOT__/repo/repo.code-workspace"],"cwd":"__PROJECT_ROOT__/repo"}
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Synchronized
+```
+
+</details>
+
+### CURSOR-FR-0003 — Launch failure after writes
+
+A launch attempt happens only after synchronization writes have succeeded, so a failed launch never rolls the writes back. The command surfaces the launch error and exits 1 while leaving the synchronized state in place.
+
+#### CURSOR-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A simulated Cursor launch failure after the writes preserves the synchronized files and exits 1 with the launch error.
+
+Proven by case `sync-open-launch-failure-preserves` — real Git, simulated Cursor failure. The fake `cursor` is driven to exit non-zero via `FAKE_CURSOR_FAIL` AFTER recording its invocation. Because the launch is gated strictly after every synchronization write, the reconciled workspace is already on disk: the command exits 1 with the launch error on stderr, and the synchronized workspace file is left in place (no rollback).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Not exercised
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+```text
+./
+└─ repo/
+   ├─ .config/
+   │  └─ wt.toml
+   └─ .worktreeinclude
+```
+
+`repo/.config/wt.toml`
+
+```toml
+[pre-start]
+wtw-copy = "wt step copy-ignored --require-include"
+
+[post-start]
+wtw-sync = "wtw sync --open"
+
+[post-remove]
+wtw-sync = "wtw sync"
+```
+
+`repo/.worktreeinclude`
+
+```text
+.config/wt.toml
+.worktreeinclude
+
+# Add other ignored files and directories below.
+```
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+
+**Command**
+
+```console
+$ wtw sync --open
+```
+
+**Output file constraints**
+
+- `repo/.fake-cursor.log` contains `repo.code-workspace`
+- `repo/repo.code-workspace` contains `feature-a`
+
+**CLI output** — exit 1
+
+```console
+Error: Failed to launch Cursor for workspace __PROJECT_ROOT__/repo/repo.code-workspace (exit 1): fake-cursor: simulated launch failure
+```
+
+</details>
+
+### CURSOR-FR-0004 — Real Cursor open and focus
+
+The hermetic suites can only prove the exact argument and ordering against the fake shim. Whether a supported real Cursor actually opens and focuses the workspace can be observed only by a human, so it is proven by a manual release check rather than an automated case.
+
+#### CURSOR-FR-0004.AC-0001 — verified by `manual` (a named manual checklist step)
+
+A supported real Cursor opens and focuses the named root workspace.
+
+Proven by manual checklist step `cursor-open-focus` in `packages/cli/docs/RELEASE-CHECKLIST.md`.
+
+## Diagnostics
+
+### CHECK-FR-0001 — Healthy aggregate report
+
+`wtw check` is a read-only aggregate diagnostic. It reports findings under the seven stable categories in order — Repository, Dependencies, Privacy, Worktrunk, Copy policy, Synchronization, Cursor workspace — and ends with deterministic severity counts. A fully healthy repository yields only pass findings and exit 0.
+
+#### CHECK-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A healthy fixture prints every stable category in order, contains only pass findings, prints deterministic counts, and exits 0.
+
+Proven by case `check-healthy-all-pass` — real Git, simulated Worktrunk/Cursor (each resolved on PATH; only `wt --version` is spawned, read-only). On a freshly initialized single-worktree repository, `check` prints the seven stable categories in their fixed order, every finding is PASS, the summary counts are deterministic, no Cursor launch occurs, and it exits 0. The full-stdout compare proves the exact category order and counts. Running from the primary root also proves context resolution (REPO-FR-0001).
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4291,11 +4138,154 @@ Summary: 16 pass, 0 warn, 0 fail, 0 skipped.
 
 </details>
 
-#### Case: check changes no repository, control, workspace, lock, or Cursor state
+### CHECK-FR-0002 — Severity-driven exit code
 
-Description: real Git, simulated Worktrunk/Cursor. After a healthy `init`, `check` runs and every managed artifact is asserted byte-identical to its post-init content: the scaffolded `.config/wt.toml` and `.worktreeinclude`, the workspace file, and the managed `info/exclude` block are unchanged, the pre-seeded fake-Cursor invocation log stays EMPTY (no launch), and no synchronization lock is left behind. This is the before/after snapshot proving `check` is read-only.
+The exit code follows the highest severity present: warnings alone still exit 0, while any failure exits 1. Both cases print aggregate counts that match the emitted findings.
 
-Covers: AC-1104
+#### CHECK-FR-0002.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A warning-only fixture exits 0 and prints aggregate counts matching the emitted findings.
+
+Proven by case `check-warning-only-exits-zero` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked worktree is registered and its directory deleted, leaving a missing/prunable registration that `check` reports as a WARN with no FAIL. Because the highest severity is a warning, `check` exits 0 and its summary reports the aggregate counts matching the emitted findings — one warn, zero fail (CHECK-FR-0002.AC-0001).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+1. Runs `git worktree add -b feature-a ../wt-a`
+1. Runs `rm -rf ../wt-a`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Summary:
+1 warn, 0 fail
+```
+
+</details>
+
+#### CHECK-FR-0002.AC-0002 — verified by `case` (a dedicated end-to-end case)
+
+A failure fixture exits 1 and prints aggregate counts matching the emitted findings.
+
+Proven by case `check-failure-exits-one` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, a required private path (`.worktreeinclude`) is force-tracked by Git, which `check` reports as a Privacy FAIL. Because a failure is present, `check` exits 1 and its summary reports the aggregate counts matching the emitted findings — zero warn, one fail (CHECK-FR-0002.AC-0002).
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+1. Runs `git add -f .worktreeinclude`
+1. Runs `git commit -m track worktreeinclude`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+Summary:
+0 warn, 1 fail
+```
+
+</details>
+
+### CHECK-FR-0003 — Skipped dependent checks
+
+When a prerequisite is unavailable, dependent checks are marked skipped rather than emitting cascading false failures, so an unavailable prerequisite does not manufacture misleading downstream failures.
+
+#### CHECK-FR-0003.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A fixture with an unavailable prerequisite marks dependent checks skipped and does not emit misleading cascaded failures.
+
+Proven by case `check-nonrepo-skips-dependents` — real Git, simulated Worktrunk/Cursor. `check` runs in a non-repository directory: the Repository category FAILs deterministically (Git reports it is not a repository) and every dependent category (Privacy, Worktrunk, Copy policy, Synchronization, Cursor workspace) is marked SKIPPED rather than emitting cascading false failures. Dependencies still report independently. The command exits 1 and writes nothing.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from the project root
+
+_Empty — no committed workspace files._
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 1
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+FAIL  Not a supported Git repository
+SKIPPED  Skipped because the repository context is unavailable.
+0 warn, 1 fail, 5 skipped
+```
+
+</details>
+
+### CHECK-FR-0004 — Read-only guarantee
+
+`wtw check` acquires no lock, opens no Cursor, and mutates no state. It never changes repository, Worktrunk, approval, lock, or Cursor state, which a before/after snapshot proves.
+
+#### CHECK-FR-0004.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+A before/after snapshot proves `wtw check` never changes repository, Worktrunk, approval, lock, or Cursor state.
+
+Proven by case `check-no-writes-snapshot` — real Git, simulated Worktrunk/Cursor. After a healthy `init`, `check` runs and every managed artifact is asserted byte-identical to its post-init content: the scaffolded `.config/wt.toml` and `.worktreeinclude`, the workspace file, and the managed `info/exclude` block are unchanged, the pre-seeded fake-Cursor invocation log stays EMPTY (no launch), and no synchronization lock is left behind. This is the before/after snapshot proving `check` is read-only.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4394,61 +4384,17 @@ Summary: 16 pass, 0 warn, 0 fail, 0 skipped.
 
 </details>
 
-#### Case: an unresolved repository context marks dependent checks skipped, no cascade
-
-Description: real Git, simulated Worktrunk/Cursor. `check` runs in a non-repository directory: the Repository category FAILs deterministically (Git reports it is not a repository) and every dependent category (Privacy, Worktrunk, Copy policy, Synchronization, Cursor workspace) is marked SKIPPED rather than emitting cascading false failures. Dependencies still report independently. The command exits 1 and writes nothing.
-
-Covers: AC-1103
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from the project root
-
-_Empty — no committed workspace files._
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 1
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-FAIL  Not a supported Git repository
-SKIPPED  Skipped because the repository context is unavailable.
-0 warn, 1 fail, 5 skipped
-```
-
-</details>
-
 ## Compatibility
 
-### WTW-FR-0012 — Worktrunk compatibility
+### COMPAT-FR-0001 — Worktrunk version evaluation
 
-The verified Worktrunk range is `>=0.67.0 <0.68.0`. `wtw check` resolves the Worktrunk version (`wt --version`, read-only) and evaluates it: a version in range passes; a version below `0.67.0` and an unparseable/absent version fail; `0.68.0` and newer warn as unverified but are not blocked.
+The verified Worktrunk range is `>=0.67.0 <0.68.0`. `wtw check` resolves the Worktrunk version read-only through `wt --version` and evaluates it: a version in range passes, a version below the minimum fails, a version at or above the next minor warns as unverified without blocking, and output that cannot be parsed fails. The complementary proof that a real Worktrunk binary reports its version as expected is a contract-layer assumption owned by the worktrunk-assumptions domain.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-1201 | Parsed versions `0.67.0` and a later `0.67.x` pass the compatibility finding; a version below `0.67.0` fails; `0.68.0` and a later version warn but do not fail; unparseable output fails. (spec AC-12.1) | ✅ `check-version-0670-passes`, `check-version-0679-passes`, `check-version-0680-warns`, `check-version-below-fails`, `check-version-unparseable-fails` |
-| AC-1202 | The external-contract suite runs the built `wtw` against a pinned real Worktrunk v0.67.0 binary and passes: `wtw check` resolves the real `wt --version` output (`wt v0.67.0`) and PASSes the Worktrunk compatibility finding, backing the verified range before it is represented as supported in the living document. (spec AC-12.2) | ✅ `contract-worktrunk-compat` |
+#### COMPAT-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: check passes the compatibility finding for Worktrunk 0.67.0
+A version at `0.67.0` or a later `0.67.x` passes the compatibility finding.
 
-Description: real Git, simulated Worktrunk (reports 0.67.0 via `wt --version`). `check` evaluates the version against the verified range `>=0.67.0 <0.68.0`: 0.67.0 is the inclusive minimum, so the Worktrunk category PASSes and the command exits 0.
-
-Covers: AC-1201
+Proven by case `check-version-0670-passes` — real Git, simulated Worktrunk (reports 0.67.0 via `wt --version`). `check` evaluates the version against the verified range `>=0.67.0 <0.68.0`: 0.67.0 is the inclusive minimum, so the Worktrunk category PASSes and the command exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4488,99 +4434,11 @@ PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
 
 </details>
 
-#### Case: check passes the compatibility finding for a later 0.67.x
+#### COMPAT-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk (reports 0.67.9). A later `0.67.x` patch remains inside the verified range `>=0.67.0 <0.68.0`, so the Worktrunk category PASSes and the command exits 0.
+A version below `0.67.0` fails the compatibility finding.
 
-Covers: AC-1201
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-PASS  Worktrunk 0.67.9 is within the verified range >=0.67.0 <0.68.0.
-16 pass, 0 warn, 0 fail
-```
-
-</details>
-
-#### Case: check warns (does not fail) for Worktrunk 0.68.0 and newer
-
-Description: real Git, simulated Worktrunk (reports 0.68.0). `0.68.0` is the exclusive upper bound of the verified range, so it is treated as unverified: the Worktrunk category WARNs but does not fail, and the command exits 0.
-
-Covers: AC-1201
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Simulated
-- Cursor: Simulated
-
-**Local project** — ran from `repo/`
-
-_Empty — no committed workspace files._
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `wtw init`
-
-**Command**
-
-```console
-$ wtw check
-```
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-WARN  Worktrunk 0.68.0 is newer than the verified range
-1 warn, 0 fail
-```
-
-</details>
-
-#### Case: check fails the compatibility finding for a version below 0.67.0
-
-Description: real Git, simulated Worktrunk (reports 0.66.9). A version below the inclusive minimum `0.67.0` fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
-
-Covers: AC-1201
+Proven by case `check-version-below-fails` — real Git, simulated Worktrunk (reports 0.66.9). A version below the inclusive minimum `0.67.0` fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4620,11 +4478,55 @@ FAIL  Worktrunk 0.66.9 is below the minimum verified version 0.67.0
 
 </details>
 
-#### Case: check fails the compatibility finding for unparseable Worktrunk output
+#### COMPAT-FR-0001.AC-0003 — verified by `case` (a dedicated end-to-end case)
 
-Description: real Git, simulated Worktrunk (reports the unparseable string `banana`). Output that carries no semantic version triple fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
+A version at `0.68.0` or later warns as unverified without failing.
 
-Covers: AC-1201
+Proven by case `check-version-0680-warns` — real Git, simulated Worktrunk (reports 0.68.0). `0.68.0` is the exclusive upper bound of the verified range, so it is treated as unverified: the Worktrunk category WARNs but does not fail, and the command exits 0.
+
+<details>
+<summary>Evidence, input, command & output</summary>
+
+**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+
+- Git: Real
+- Worktrunk: Simulated
+- Cursor: Simulated
+
+**Local project** — ran from `repo/`
+
+_Empty — no committed workspace files._
+
+**Setup steps** — run before the command
+
+1. Runs `git init -b main .`
+1. Runs `git commit --allow-empty -m init`
+1. Runs `wtw init`
+
+**Command**
+
+```console
+$ wtw check
+```
+
+**CLI output** — exit 0
+
+_No exact stdout or stderr asserted._
+
+**Required stdout substrings**
+
+```text
+WARN  Worktrunk 0.68.0 is newer than the verified range
+1 warn, 0 fail
+```
+
+</details>
+
+#### COMPAT-FR-0001.AC-0004 — verified by `case` (a dedicated end-to-end case)
+
+Unparseable Worktrunk version output fails the compatibility finding.
+
+Proven by case `check-version-unparseable-fails` — real Git, simulated Worktrunk (reports the unparseable string `banana`). Output that carries no semantic version triple fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4664,11 +4566,267 @@ FAIL  Worktrunk version "banana" is not a parseable semantic version
 
 </details>
 
-#### Case: check passes the compatibility finding against the real v0.67.0 binary
+## Worktrunk Assumptions
 
-Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The built `wtw` runs `check` against the pinned real Worktrunk binary in isolated home/config state. `check` resolves the real `wt --version` output (`wt v0.67.0`), extracts the `0.67.0` triple, and PASSes the Worktrunk compatibility finding within the verified range `>=0.67.0 <0.68.0`; every category PASSes and the command exits 0. This backs the verified range with a passing real contract (spec AC-12.2). Run only under `bun run test:contract`; skipped when the pinned binary is absent.
+### WTA-FR-0001 — Native worktree-creation approval
 
-Covers: AC-1202
+Real Worktrunk gates first-use worktree creation behind its own native approval, and wtw neither grants nor bypasses it. A non-interactive create without explicit approval is refused, and the refusal grants nothing in the isolated native approval store. These are multi-step observations of the real binary, each proven by a named checkpoint of the real-Worktrunk scenario.
+
+#### WTA-FR-0001.AC-0001 — verified by `checkpoint` (a named scenario checkpoint)
+
+A non-interactive worktree create without explicit approval is refused by real Worktrunk.
+
+Proven by checkpoint `native-approval-refused` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `native-approval-refused`** — native worktree-create approval is refused without explicit approval
+
+A non-interactive real Worktrunk `switch --create` without explicit approval is refused by the native approval gate, which wtw neither grants nor bypasses.
+
+</details>
+
+#### WTA-FR-0001.AC-0002 — verified by `checkpoint` (a named scenario checkpoint)
+
+A refused worktree create leaves the isolated native approval store empty.
+
+Proven by checkpoint `approval-store-empty` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `approval-store-empty`** — a refused create leaves the native approval store empty
+
+After the refused create, the isolated native Worktrunk approval store is still empty, proving init granted nothing.
+
+</details>
+
+### WTA-FR-0002 — Blocking pre-start copy before readiness
+
+Real Worktrunk runs the reserved blocking pre-start hook before a successful create returns, so selected ignored data and both control files copied from the primary already exist in the new worktree the moment the create command returns. Each is proven by a named checkpoint of the real-Worktrunk scenario.
+
+#### WTA-FR-0002.AC-0001 — verified by `checkpoint` (a named scenario checkpoint)
+
+Selected ignored data from the primary exists in the new worktree the moment a successful create returns.
+
+Proven by checkpoint `prestart-ignored-data` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `prestart-ignored-data`** — selected ignored data exists before the create returns
+
+The blocking `pre-start` hook runs before a successful create returns, so selected ignored data copied from the primary already exists in the new worktree the moment the create command returns.
+
+</details>
+
+#### WTA-FR-0002.AC-0002 — verified by `checkpoint` (a named scenario checkpoint)
+
+Both control files exist in the new worktree the moment a successful create returns.
+
+Proven by checkpoint `prestart-control-files` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `prestart-control-files`** — both control files exist before the create returns
+
+The blocking `pre-start` hook copies both control files (`.config/wt.toml` and `.worktreeinclude`) from the primary, so both exist in the new worktree the moment a successful create returns.
+
+</details>
+
+### WTA-FR-0003 — Primary-authoritative copy source
+
+The pre-start copy always sources from the primary worktree, even when the new branch base is a linked worktree whose ignored content has diverged. The new worktree receives the primary's ignored data and both control files, not the divergent base's. Each is proven by a named checkpoint of the real-Worktrunk scenario.
+
+#### WTA-FR-0003.AC-0001 — verified by `checkpoint` (a named scenario checkpoint)
+
+Ignored data in a worktree created off a divergent linked base matches the primary rather than that base.
+
+Proven by checkpoint `linked-base-ignored-data-from-primary` of scenario `contract-linked-base`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-linked-base`: real Git, real Worktrunk v0.67.0, simulated Cursor. The second lifecycle proof in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent): a new worktree whose branch base is a LINKED worktree whose ignored content has diverged from the primary. The blocking `pre-start` copy always sources from the primary worktree, so the new worktree receives the primary's ignored data and both control files, not the divergent base's. Ordered, background-hook-driven assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+
+**Checkpoint `linked-base-ignored-data-from-primary`** — ignored data off a divergent linked base matches the primary
+
+When a worktree is created off a divergent linked base, the pre-start copy sources from the primary, so the new worktree's ignored data matches the primary rather than the divergent base.
+
+</details>
+
+#### WTA-FR-0003.AC-0002 — verified by `checkpoint` (a named scenario checkpoint)
+
+Both control files are present in a worktree created off a linked base.
+
+Proven by checkpoint `linked-base-control-files-present` of scenario `contract-linked-base`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-linked-base`: real Git, real Worktrunk v0.67.0, simulated Cursor. The second lifecycle proof in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent): a new worktree whose branch base is a LINKED worktree whose ignored content has diverged from the primary. The blocking `pre-start` copy always sources from the primary worktree, so the new worktree receives the primary's ignored data and both control files, not the divergent base's. Ordered, background-hook-driven assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+
+**Checkpoint `linked-base-control-files-present`** — both control files are present off a linked base
+
+A worktree created off a linked base receives both control files (`.config/wt.toml` and `.worktreeinclude`) copied from the primary.
+
+</details>
+
+### WTA-FR-0004 — Background post-start reconciliation
+
+After a successful create, real Worktrunk fires the reserved background post-start hook that runs the wtw synchronization with editor launch, reconciling the root workspace to list the new worktree and opening the editor once on the absolute root workspace path. Each is proven by a named checkpoint of the real-Worktrunk scenario.
+
+#### WTA-FR-0004.AC-0001 — verified by `checkpoint` (a named scenario checkpoint)
+
+The background post-start hook reconciles the root workspace to list the newly created worktree.
+
+Proven by checkpoint `poststart-workspace-reconciled` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `poststart-workspace-reconciled`** — post-start hook reconciles the workspace to list the new worktree
+
+After a successful create, the background `post-start` `wtw sync --open` reconciles the root workspace `folders` to list the newly created worktree.
+
+</details>
+
+#### WTA-FR-0004.AC-0002 — verified by `checkpoint` (a named scenario checkpoint)
+
+The background post-start hook opens the editor once on the absolute root workspace path.
+
+Proven by checkpoint `poststart-editor-opened-once` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `poststart-editor-opened-once`** — post-start hook opens the editor once on the root workspace path
+
+The background `post-start` hook launches the fake Cursor exactly once on the absolute root-workspace path and never opens a GUI.
+
+</details>
+
+### WTA-FR-0005 — Background post-remove reconciliation
+
+Removing a linked worktree through real Worktrunk fires the reserved background post-remove hook that runs the plain wtw synchronization, reconciling the root workspace to drop the removed worktree and, lacking the launch flag, opening no editor. Each is proven by a named checkpoint of the real-Worktrunk scenario.
+
+#### WTA-FR-0005.AC-0001 — verified by `checkpoint` (a named scenario checkpoint)
+
+The background post-remove hook reconciles the root workspace to drop the removed worktree.
+
+Proven by checkpoint `postremove-workspace-dropped` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `postremove-workspace-dropped`** — post-remove hook drops the removed worktree from the workspace
+
+Removal invoked from a linked worktree fires the background `post-remove` `wtw sync`, which reconciles the root workspace to drop the removed worktree after the hook completes.
+
+</details>
+
+#### WTA-FR-0005.AC-0002 — verified by `checkpoint` (a named scenario checkpoint)
+
+The post-remove reconciliation opens no editor because it carries no launch flag.
+
+Proven by checkpoint `postremove-no-editor` of scenario `contract-lifecycle`
+
+<details>
+<summary>Scenario checkpoint evidence</summary>
+
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+
+- Git: Real
+- Worktrunk: Real
+- Cursor: Simulated
+
+**Scenario** — `contract-lifecycle`: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns; the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI; removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes. Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization. The primary-authoritative copy source off a divergent linked base is the separate second lifecycle proof declared by `contract-linked-base`.
+
+**Checkpoint `postremove-no-editor`** — post-remove reconciliation opens no editor
+
+The `post-remove` synchronization carries no launch flag, so it opens no editor.
+
+</details>
+
+### WTA-FR-0006 — Real binary version reporting
+
+The pinned real Worktrunk binary reports its version through its version command, giving wtw's read-only compatibility check real evidence. Because a single command suffices, this assumption is proven by one contract-mode case against the real binary rather than by a lifecycle checkpoint.
+
+#### WTA-FR-0006.AC-0001 — verified by `case` (a dedicated end-to-end case)
+
+The pinned real Worktrunk binary reports its version as the pinned release.
+
+Proven by case `contract-worktrunk-compat` — real Git, real Worktrunk v0.67.0, simulated Cursor. The built `wtw` runs `check` against the pinned real Worktrunk binary in isolated home/config state. `check` resolves the real `wt --version` output (`wt v0.67.0`), extracts the `0.67.0` triple, and PASSes the Worktrunk compatibility finding within the verified range `>=0.67.0 <0.68.0`; every category PASSes and the command exits 0. This backs the verified range with a passing real contract (WTA-FR-0006.AC-0001). Run only under `bun run test:contract`; skipped when the pinned binary is absent.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -4708,372 +4866,135 @@ PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
 
 </details>
 
-## Lifecycle
+## Harness
 
-### WTW-FR-0013 — Lifecycle integration
+### HARNESS-FR-0001 — Requirement manifest schema strictness
 
-The Worktrunk lifecycle carries `wtw` end to end. The blocking `pre-start` copy makes selected ignored data and both control files part of worktree readiness, so they exist before a successful create command returns. The background `post-start` `wtw sync --open` reconciles the workspace and opens Cursor on the exact absolute root-workspace path. Removal invoked from a linked worktree runs the background `post-remove` `wtw sync`, leaving the root workspace without the removed path. The real-lifecycle proofs (AC-13.1, AC-13.2) are established by the external-contract suite against a pinned real Worktrunk v0.67.0 binary; the repair proofs (AC-13.3) are fast cases that need no real binary, since a hook that never ran (a failed background hook, `--no-hooks`, or a raw `git worktree add`) is repaired by an explicit `wtw check`/`wtw sync`.
+The requirement manifest loader is strict: it rejects malformed requirement or acceptance identifiers, unknown fields, missing or unrecognized verification kinds, and acceptance statements that smuggle reserved cross-reference tokens. Strictness is inherent to the harness and is proven by the requirement-schema unit test.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-1301 | The real Worktrunk scenario proves selected ignored content exists before a successful create command returns, while the fake Cursor records the post-start exact absolute workspace open invocation exactly once. (spec AC-13.1) | ✅ `contract-lifecycle` |
-| AC-1302 | Removing from a linked worktree through real Worktrunk leaves the root workspace without the removed path after the background post-remove hook completes. (spec AC-13.2) | ✅ `contract-lifecycle` |
-| AC-1303 | Fast cases demonstrate repair after a simulated failed background hook, after `--no-hooks`, and after raw Git drift, through explicit `wtw check` and `wtw sync`. (spec AC-13.3) | ✅ `lifecycle-background-failure-repaired`, `lifecycle-no-hooks-repaired`, `sync-raw-git-worktree-repaired` |
+#### HARNESS-FR-0001.AC-0001 — verified by `unit` (a named unit-test file)
 
-#### Case: full real-Worktrunk lifecycle against the built wtw
+A malformed requirement identifier is rejected at load time.
 
-Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+Proven by unit test `packages/cli/test/e2e/harness.test/requirements.test.ts`.
 
-Covers: AC-1301, AC-1302
+#### HARNESS-FR-0001.AC-0002 — verified by `unit` (a named unit-test file)
 
-<details>
-<summary>Evidence, input, command & output</summary>
+An unknown field on a requirement or an acceptance entry is rejected at load time.
 
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
+Proven by unit test `packages/cli/test/e2e/harness.test/requirements.test.ts`.
 
-- Git: Real
-- Worktrunk: Real
-- Cursor: Simulated
+#### HARNESS-FR-0001.AC-0003 — verified by `unit` (a named unit-test file)
 
-**Local project** — ran from `repo/`
+A missing or unrecognized verification kind is rejected at load time.
 
-_Empty — no committed workspace files._
+Proven by unit test `packages/cli/test/e2e/harness.test/requirements.test.ts`.
 
-**Setup steps** — run before the command
+#### HARNESS-FR-0001.AC-0004 — verified by `unit` (a named unit-test file)
 
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
+An acceptance statement carrying a reserved cross-reference token is rejected at load time.
 
-**Command**
+Proven by unit test `packages/cli/test/e2e/harness.test/requirements.test.ts`.
 
-```console
-$ wtw init
-```
+### HARNESS-FR-0002 — Case manifest schema strictness
 
-**CLI output** — exit 0
+The E2E case loader is equally strict: it rejects unknown fields, coverage references that are not a single compound target, and unsafe fixture paths. This strictness is inherent to the harness and is proven by the case-schema unit test.
 
-_No exact stdout or stderr asserted._
+#### HARNESS-FR-0002.AC-0001 — verified by `unit` (a named unit-test file)
 
-**Required stdout substrings**
+A case manifest with an unknown field is rejected at load time.
 
-```text
-Initialized wtw local automation for this repository.
-```
+Proven by unit test `packages/cli/test/e2e/harness.test/case-manifest.test.ts`.
 
-</details>
+#### HARNESS-FR-0002.AC-0002 — verified by `unit` (a named unit-test file)
 
-#### Case: repair after a failed background post-start sync
+A case coverage reference that is not a single compound target is rejected at load time.
 
-Description: real Git, simulated Worktrunk (the failed background hook is simulated). The background `post-start` `wtw sync` may fail and leave a newly created linked worktree with temporary drift: no canonical control files and no workspace entry. Spec lifecycle behavior makes the repair path an explicit `wtw sync`. Here a linked worktree that never got synced (modelled by a raw `git worktree add`, which runs no hooks) is repaired by an explicit `sync`: it gains the canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace folder entry, with no real binary needed.
+Proven by unit test `packages/cli/test/e2e/harness.test/case-manifest.test.ts`.
 
-Covers: AC-1303
+#### HARNESS-FR-0002.AC-0003 — verified by `unit` (a named unit-test file)
 
-<details>
-<summary>Evidence, input, command & output</summary>
+A case fixture path that escapes its case directory is rejected at load time.
 
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
+Proven by unit test `packages/cli/test/e2e/harness.test/case-manifest.test.ts`.
 
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
+### HARNESS-FR-0003 — Single traceability authority
 
-**Local project** — ran from `repo/`
+One shared traceability function is the sole authority the E2E suite and the living-document generator both call, so the gate and the document can never disagree. It enforces the one-to-one mapping between declarative cases and their criteria, verification-mode alignment for real-tool assumptions, and resolution of unit and manual evidence references. It is proven by the traceability unit test that feeds each violation to the shared function.
 
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
+#### HARNESS-FR-0003.AC-0001 — verified by `unit` (a named unit-test file)
 
-`repo/.config/wt.toml`
+A declarative case covering zero or more than one criterion fails the shared traceability check.
 
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
+Proven by unit test `packages/cli/test/e2e/harness.test/traceability.test.ts`.
 
-[post-start]
-wtw-sync = "wtw sync --open"
+#### HARNESS-FR-0003.AC-0002 — verified by `unit` (a named unit-test file)
 
-[post-remove]
-wtw-sync = "wtw sync"
-```
+An active case-verified criterion with no covering case fails the shared traceability check.
 
-`repo/.worktreeinclude`
+Proven by unit test `packages/cli/test/e2e/harness.test/traceability.test.ts`.
 
-```text
-.config/wt.toml
-.worktreeinclude
+#### HARNESS-FR-0003.AC-0003 — verified by `unit` (a named unit-test file)
 
-# Add other ignored files and directories below.
-```
+A simulated-mode case covering a real-tool assumption fails the shared traceability check.
 
-**Setup steps** — run before the command
+Proven by unit test `packages/cli/test/e2e/harness.test/traceability.test.ts`.
 
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b bg-fail ../wt-bg-fail`
+#### HARNESS-FR-0003.AC-0004 — verified by `unit` (a named unit-test file)
 
-**Command**
+A unit-verified criterion naming a missing test file fails the shared traceability check.
 
-```console
-$ wtw sync
-```
+Proven by unit test `packages/cli/test/e2e/harness.test/traceability.test.ts`.
 
-**Output files**
+#### HARNESS-FR-0003.AC-0005 — verified by `unit` (a named unit-test file)
 
-`wt-bg-fail/.config/wt.toml`
+A manual-verified criterion naming an unresolved checklist step fails the shared traceability check.
 
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
+Proven by unit test `packages/cli/test/e2e/harness.test/traceability.test.ts`.
 
-[post-start]
-wtw-sync = "wtw sync --open"
+### HARNESS-FR-0004 — Living behavior document generation and drift
 
-[post-remove]
-wtw-sync = "wtw sync"
-```
+The behavior document is fully generated: the renderer emits every active criterion exactly once with its own kind-labeled evidence block and the real-versus-simulated dependency labeling, and the drift check fails on any byte change. This generation and drift behavior is proven by the living-document unit test.
 
-`wt-bg-fail/.worktreeinclude`
+#### HARNESS-FR-0004.AC-0001 — verified by `unit` (a named unit-test file)
 
-```text
-.config/wt.toml
-.worktreeinclude
+The generator renders every active criterion exactly once with its own evidence block.
 
-# Add other ignored files and directories below.
-```
+Proven by unit test `packages/cli/test/living-docs.test.ts`.
 
-**Output file constraints**
+#### HARNESS-FR-0004.AC-0002 — verified by `unit` (a named unit-test file)
 
-- `repo/repo.code-workspace` contains `bg-fail`
+Rendered case and checkpoint evidence is labeled as real or simulated per dependency.
 
-**CLI output** — exit 0
+Proven by unit test `packages/cli/test/living-docs.test.ts`.
 
-_No exact stdout or stderr asserted._
+#### HARNESS-FR-0004.AC-0003 — verified by `unit` (a named unit-test file)
 
-**Required stdout substrings**
+The drift check reports failure when the generated document differs from the committed one and writes nothing.
 
-```text
-Synchronized
-```
+Proven by unit test `packages/cli/test/living-docs.test.ts`.
 
-</details>
+### HARNESS-FR-0005 — Aggregate verification gate
 
-#### Case: repair after a --no-hooks worktree creation
+The repository's aggregate gate script chains formatting/linting, type checking, package tests, fast E2E, the real external contract, behavior-doc drift, and build so that a failing stage aborts the run. This fail-fast composition is a repository-tooling invariant unreachable from the E2E harness and is proven by the toolchain unit test.
 
-Description: real Git, simulated Worktrunk (the `--no-hooks` creation is simulated). A worktree created with Worktrunk's `--no-hooks` retains native behavior and receives no automatic `wtw` compensation, so it starts with no canonical control files and no workspace entry. Spec lifecycle behavior makes the repair path an explicit `wtw sync`. Here a hook-less worktree creation (modelled by a raw `git worktree add`, which likewise runs no hooks) is repaired by an explicit `sync`: it gains the canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace folder entry, with no real binary needed.
+#### HARNESS-FR-0005.AC-0001 — verified by `unit` (a named unit-test file)
 
-Covers: AC-1303
+The aggregate gate script chains every verification stage so a failing stage aborts the remaining stages.
 
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b no-hooks ../wt-no-hooks`
-
-**Command**
-
-```console
-$ wtw sync
-```
-
-**Output files**
-
-`wt-no-hooks/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-no-hooks/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Output file constraints**
-
-- `repo/repo.code-workspace` contains `no-hooks`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Synchronized
-```
-
-</details>
-
-#### Case: raw-git linked worktree gains control files and workspace entry
-
-Description: real Git, simulated nothing. A linked worktree created by raw `git worktree add` (which runs no Worktrunk hooks) starts with no control files. An explicit `sync` repairs the drift: the worktree gains canonical `.config/wt.toml` and `.worktreeinclude` copies and a workspace folder entry. (The complementary drift REPORT is proven by `wtw check` in Task 13.)
-
-Covers: AC-1303
-
-<details>
-<summary>Evidence, input, command & output</summary>
-
-**Evidence** — dependency mode: fast — real `wtw` entrypoint in an isolated temp environment
-
-- Git: Real
-- Worktrunk: Not exercised
-- Cursor: Not exercised
-
-**Local project** — ran from `repo/`
-
-```text
-./
-└─ repo/
-   ├─ .config/
-   │  └─ wt.toml
-   └─ .worktreeinclude
-```
-
-`repo/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`repo/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Setup steps** — run before the command
-
-1. Runs `git init -b main .`
-1. Runs `git commit --allow-empty -m init`
-1. Runs `git worktree add -b feature-a ../wt-a`
-
-**Command**
-
-```console
-$ wtw sync
-```
-
-**Output files**
-
-`wt-a/.config/wt.toml`
-
-```toml
-[pre-start]
-wtw-copy = "wt step copy-ignored --require-include"
-
-[post-start]
-wtw-sync = "wtw sync --open"
-
-[post-remove]
-wtw-sync = "wtw sync"
-```
-
-`wt-a/.worktreeinclude`
-
-```text
-.config/wt.toml
-.worktreeinclude
-
-# Add other ignored files and directories below.
-```
-
-**Output file constraints**
-
-- `repo/repo.code-workspace` contains `feature-a`
-
-**CLI output** — exit 0
-
-_No exact stdout or stderr asserted._
-
-**Required stdout substrings**
-
-```text
-Synchronized
-```
-
-</details>
+Proven by unit test `packages/cli/test/toolchain.test.ts`.
 
 ## Version
 
-### WTW-FR-0015 — Version, build, and local use
+### VER-FR-0001 — Source-run version identity
 
-The CLI reports its identity through `--version`/`-V`. A source or test run prints exactly the CLI package version followed by ` (dev)`; a bundled build prints `<version> (<short-sha>)`.
+The CLI reports its identity through `--version` and `-V`. A source or test run (not a bundled build) prints exactly the CLI package version followed by the ` (dev)` marker and exits 0. The bundled-build identity forms (embedded short SHA, Node shebang, self-contained bundle, symlink install) are inherently unreachable from the source-run E2E harness and are owned by the architecture and harness domains, evidenced by the build and install unit suites.
 
-| Criterion | Statement | Coverage |
-| --- | --- | --- |
-| AC-1501 | Source-run `--version` and `-V` print exactly the CLI package version followed by ` (dev)` and exit 0. (spec AC-15.1) | ✅ `version-dev`, `version-short` |
+#### VER-FR-0001.AC-0001 — verified by `case` (a dedicated end-to-end case)
 
-#### Case: Version via --version (dev)
+A source-run `wtw --version` prints the package version followed by ` (dev)` and exits 0.
 
-Description: A source/test run of `wtw --version` prints exactly the CLI package version followed by ` (dev)` to stdout and exits 0.
-
-Covers: AC-1501
+Proven by case `version-dev` — A source/test run of `wtw --version` prints exactly the CLI package version followed by ` (dev)` to stdout and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>
@@ -5102,11 +5023,11 @@ __VERSION__ (dev)
 
 </details>
 
-#### Case: Version via -V (dev)
+#### VER-FR-0001.AC-0002 — verified by `case` (a dedicated end-to-end case)
 
-Description: `wtw -V` prints the same `<version> (dev)` string to stdout and exits 0.
+A source-run `wtw -V` prints the package version followed by ` (dev)` and exits 0.
 
-Covers: AC-1501
+Proven by case `version-short` — `wtw -V` prints the same `<version> (dev)` string to stdout and exits 0.
 
 <details>
 <summary>Evidence, input, command & output</summary>

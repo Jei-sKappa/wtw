@@ -12,7 +12,7 @@ const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
 const validCase: RawCaseManifest = {
   id: "bare-invocation",
-  covers: "WTW-FR-0002.AC-0201",
+  covers: "DEMO-FR-0002.AC-0201",
   title: "Bare invocation",
   description: "Runs the bare CLI.",
   cwd: "sub",
@@ -37,13 +37,13 @@ const scenarioCase: RawCaseManifest = {
       id: "start-copies",
       title: "Start copies control files",
       description: "A new worktree receives the control files on start.",
-      covers: "WTW-FR-0008.AC-0801",
+      covers: "DEMO-FR-0008.AC-0801",
     },
     {
       id: "remove-syncs",
       title: "Remove re-syncs the workspace",
       description: "Removing a worktree re-syncs the workspace folders.",
-      covers: "WTW-FR-0008.AC-0802",
+      covers: "DEMO-FR-0008.AC-0802",
     },
   ],
   cwd: ".",
@@ -339,10 +339,10 @@ describe("validateCaseManifest", () => {
   it("rejects uppercase or requirement-shaped case ids", () => {
     expect(() =>
       validateCaseManifest(
-        { ...validCase, id: "WTW-FR-0002-bare" },
+        { ...validCase, id: "DEMO-FR-0002-bare" },
         { filePath: "test/e2e/cases/bare-invocation/case.yml" },
       ),
-    ).toThrow(/invalid case id WTW-FR-0002-bare/);
+    ).toThrow(/invalid case id DEMO-FR-0002-bare/);
   });
 
   it("rejects unknown case fields", () => {
@@ -379,14 +379,14 @@ describe("validateCaseManifest", () => {
   it("rejects a list-valued covers and a bare FR ref", () => {
     expect(() =>
       validateCaseManifest(
-        { ...validCase, covers: ["WTW-FR-0002.AC-0201"] },
+        { ...validCase, covers: ["DEMO-FR-0002.AC-0201"] },
         { filePath: "test/e2e/cases/bare-invocation/case.yml" },
       ),
     ).toThrow(/covers must be a non-empty string/);
 
     expect(() =>
       validateCaseManifest(
-        { ...validCase, covers: "WTW-FR-0002" },
+        { ...validCase, covers: "DEMO-FR-0002" },
         { filePath: "test/e2e/cases/bare-invocation/case.yml" },
       ),
     ).toThrow(/covers must be an acceptance criterion ref/);
@@ -405,7 +405,7 @@ describe("validateCaseManifest", () => {
   it("rejects a scenario case that declares case-level covers", () => {
     expect(() =>
       validateCaseManifest(
-        { ...scenarioCase, covers: "WTW-FR-0008.AC-0801" },
+        { ...scenarioCase, covers: "DEMO-FR-0008.AC-0801" },
         { filePath: "test/e2e/cases/contract-lifecycle/case.yml" },
       ),
     ).toThrow(/covers is forbidden on scenario cases/);
@@ -440,7 +440,7 @@ describe("validateCaseManifest", () => {
               id: "start-copies",
               title: "Start copies control files",
               description: "A new worktree receives control files.",
-              covers: "WTW-FR-0008",
+              covers: "DEMO-FR-0008",
             },
           ],
         },
@@ -459,13 +459,13 @@ describe("validateCaseManifest", () => {
               id: "start-copies",
               title: "Start copies control files",
               description: "A new worktree receives control files.",
-              covers: "WTW-FR-0008.AC-0801",
+              covers: "DEMO-FR-0008.AC-0801",
             },
             {
               id: "start-copies",
               title: "Duplicate id",
               description: "Reuses the same checkpoint id.",
-              covers: "WTW-FR-0008.AC-0802",
+              covers: "DEMO-FR-0008.AC-0802",
             },
           ],
         },
@@ -484,19 +484,19 @@ describe("validateCaseManifest", () => {
               id: "start-copies",
               title: "Start copies control files",
               description: "A new worktree receives control files.",
-              covers: "WTW-FR-0008.AC-0801",
+              covers: "DEMO-FR-0008.AC-0801",
             },
             {
               id: "remove-syncs",
               title: "Remove re-syncs the workspace",
               description: "Removing a worktree re-syncs folders.",
-              covers: "WTW-FR-0008.AC-0801",
+              covers: "DEMO-FR-0008.AC-0801",
             },
           ],
         },
         { filePath: "test/e2e/cases/contract-lifecycle/case.yml" },
       ),
-    ).toThrow(/checkpoints contains duplicate covers ref WTW-FR-0008.AC-0801/);
+    ).toThrow(/checkpoints contains duplicate covers ref DEMO-FR-0008.AC-0801/);
   });
 
   it("rejects unsafe paths and backslashes", () => {
@@ -636,7 +636,7 @@ describe("loadCases", () => {
     const secondDir = path.join(casesDir, "second");
     const caseManifest = [
       "id: duplicate-case",
-      "covers: WTW-FR-0002.AC-0201",
+      "covers: DEMO-FR-0002.AC-0201",
       "title: Duplicate case",
       "description: Uses the same case id in two directories.",
       'command: ["--help"]',

@@ -65,14 +65,34 @@ installed via a symlink from `~/.local/bin/wtw` (see
 
 ### Verification model
 
-Behavior is specified in requirement manifests
-(`packages/cli/requirements/functional/*.yml`) mapped to E2E cases
-(`packages/cli/test/e2e/cases/*/case.yml`) with modes `fast` (fake wt/cursor
-shims), `contract` (real pinned Worktrunk v0.67.0 + built bundle), and
-`scenario` (imperative lifecycle proof in `contract.test.ts`). Traceability is
-enforced: every active FR-02..FR-13 criterion needs a covering case.
-`packages/cli/docs/BEHAVIOR.md` is GENERATED (`bun run docs:living`) — never
-hand-edit it; `docs:living:check` fails on drift.
+Observable behavior is specified in requirement manifests
+(`packages/cli/requirements/functional/*.yml`), the authoritative acceptance
+registry for wtw. Each manifest file owns one domain and carries many narrow
+functional requirements; every FR is `<DOMAIN>-FR-<NNNN>` (the domain prefix is
+unique per file), holds its shared context in the description, and lists short
+single-assertion acceptance criteria numbered locally as `AC-<NNNN>` per FR.
+Every cross-reference uses the compound form `<FR-ID>.<AC-ID>`. IDs are
+append-only; a withdrawn FR/AC stays as a `status: retired` tombstone.
+
+Each AC declares its proof via `verifiedBy`, and traceability is one-to-one per
+kind: `case` — exactly one declarative E2E case
+(`packages/cli/test/e2e/cases/*/case.yml`) in `fast` mode (fake wt/cursor shims)
+or `contract` mode (real pinned Worktrunk + built bundle); `checkpoint` —
+exactly one named checkpoint of the single imperative real-Worktrunk `scenario`
+run in `contract.test.ts`; `unit` — one named unit-test file (e.g.
+`packages/core/test/dependency-boundary.test.ts`), reserved for invariants the
+E2E harness cannot reach; `manual` — one named step of
+`packages/cli/docs/RELEASE-CHECKLIST.md`. Zero and double coverage both fail.
+The `WTA` (Worktrunk-assumptions) group enumerates every assumption wtw makes
+about real Worktrunk; its `verifiedBy: case` ACs must be proven in contract mode
+— a fast-mode case covering one fails traceability. A single traceability
+authority (`packages/cli/test/e2e/harness/traceability.ts`) is called by both
+the E2E suite and the living-doc generator so the gate and the document can
+never disagree. `packages/cli/docs/BEHAVIOR.md` is GENERATED per-AC
+(`bun run docs:living`) — never hand-edit it; `docs:living:check` fails on
+drift. The one-time genesis migration audit proving no behavior guarantee was
+lost is archived under
+`docs/threads/260712082750Z-requirements-harness-rework/migration/`.
 
 Key scripts (root): `format`, `check` (biome), `typecheck`, `test`,
 `test:e2e`, `test:contract`, `docs:living[:check]`, `build`, and

@@ -10,7 +10,7 @@ import {
   validateTraceability,
 } from "../harness/traceability";
 
-// This suite is the persistent single-authority proof (spec AC-3.4): every rule
+// This suite is the persistent single-authority proof: every rule
 // is exercised by feeding a violating IN-MEMORY fixture to the one shared
 // `validateTraceability` function the E2E suite and the living-doc generator
 // both call. No rule is checked anywhere but inside that function.
