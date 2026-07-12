@@ -1,0 +1,15 @@
+id: repo-nonrepo-directory
+covers: REPO-FR-0004.AC-0002
+title: a non-repository directory produces a deterministic error without writes
+description: >
+  real Git, no repository. `init` is invoked in a directory that is not a Git
+  repository, so read-only discovery (`git rev-parse --git-common-dir`) fails.
+  wtw surfaces this as an ordinary, deterministic command failure: exit 1 with a
+  single `Error:` line on stderr and empty stdout, before any write.
+env:
+  WTW_PLATFORM: darwin
+command: ["init"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: git rev-parse --git-common-dir failed (exit 128): fatal: not a git repository (or any of the parent directories): .git\n"

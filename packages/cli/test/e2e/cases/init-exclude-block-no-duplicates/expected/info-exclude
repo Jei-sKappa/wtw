@@ -1,0 +1,7 @@
+# local excludes
+scratch/
+# >>> wtw managed >>>
+.config/wt.toml
+.worktreeinclude
+repo.code-workspace
+# <<< wtw managed <<<

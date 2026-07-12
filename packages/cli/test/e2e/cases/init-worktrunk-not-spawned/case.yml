@@ -1,0 +1,29 @@
+id: init-worktrunk-not-spawned
+covers: CONF-FR-0004.AC-0001
+title: init never spawns Worktrunk and mutates no approval state
+description: >
+  real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned).
+  The Worktrunk (`wt`) executable is resolved by init's preflight but never
+  invoked, so its pre-seeded invocation log stays EMPTY: no `wt` process runs and
+  no approval state is mutated during init, which exits 0.
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+  WTW_WT_BIN: __FAKE_WT_BIN__
+  WTW_CURSOR_BIN: __FAKE_CURSOR_BIN__
+  WTW_NODE_BIN: __FAKE_GIT_BIN__
+  WTW_WTW_BIN: __FAKE_GIT_BIN__
+  WTW_PLATFORM: darwin
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+command: ["init"]
+expect:
+  exitCode: 0
+  stdoutContains: ["Initialized wtw local automation"]
+  stderr: ""
+  files:
+    "repo/.fake-wt.log": "expected/empty-log"

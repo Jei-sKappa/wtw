@@ -60,6 +60,9 @@ function out(value) {
 //   FAKE_GIT_BARE       -> `rev-parse --is-bare-repository` reports "true"
 //   FAKE_GIT_PRUNABLE   -> the primary worktree record carries a `prunable` line
 //   FAKE_GIT_NO_PRIMARY -> `worktree list --porcelain` reports only a bare entry
+//   FAKE_GIT_PRIMARY_MISSING -> the primary worktree record points at a
+//                               <cwd>/missing-primary directory that does not
+//                               exist (fails the `primary_path_exists` conjunct)
 //   FAKE_GIT_TOPLEVEL_SUFFIX -> `--show-toplevel` returns <cwd>/<suffix>
 //                               (a root that does not resolve to the primary)
 //   FAKE_GIT_FAIL_ON    -> comma list of argv tokens that make the fake exit 128
@@ -94,8 +97,11 @@ function shapeMain() {
     if (process.env.FAKE_GIT_NO_PRIMARY) {
       out(`worktree ${path.join(cwd, ".bare")}\nbare\n`);
     }
+    const primaryPath = process.env.FAKE_GIT_PRIMARY_MISSING
+      ? path.join(cwd, "missing-primary")
+      : cwd;
     const lines = [
-      `worktree ${cwd}`,
+      `worktree ${primaryPath}`,
       "HEAD 1111111111111111111111111111111111111111",
       "branch refs/heads/main",
     ];

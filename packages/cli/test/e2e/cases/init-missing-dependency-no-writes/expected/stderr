@@ -1,0 +1,2 @@
+Error: init cannot proceed; resolve the following, then rerun (wtw made no changes):
+  - Required executable not found on PATH: Worktrunk (`wtw-missing-bin`).

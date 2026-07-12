@@ -1,0 +1,11 @@
+id: check-unknown-option
+covers: CLI-FR-0003.AC-0003
+title: check rejects a command-specific option
+description: >
+  `check` accepts no command-specific options; a foreign option is rejected,
+  exiting 1 with one `Error: <message>` line on stderr and empty stdout.
+command: ["check", "--stat"]
+expect:
+  exitCode: 1
+  stdout: ""
+  stderr: "Error: Unknown check option --stat.\n"
