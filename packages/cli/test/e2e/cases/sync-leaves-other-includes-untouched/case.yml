@@ -1,6 +1,5 @@
 id: sync-leaves-other-includes-untouched
-covers:
-  - WTW-FR-0008.AC-0802
+covers: SYNC-FR-0002.AC-0001
 title: sync touches no other include-selected path
 description: >
   real Git, simulated nothing. The primary `.worktreeinclude` selects `notes.txt`

@@ -1,7 +1,5 @@
 id: init-rerun-idempotent
-covers:
-  - WTW-FR-0004.AC-0403
-  - WTW-FR-0005.AC-0503
+covers: INIT-FR-0003.AC-0001
 title: rerunning init on a healthy setup is a no-op apart from reconciliation
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A

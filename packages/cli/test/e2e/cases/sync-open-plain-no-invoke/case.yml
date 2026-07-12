@@ -1,6 +1,5 @@
 id: sync-open-plain-no-invoke
-covers:
-  - WTW-FR-0010.AC-1001
+covers: CURSOR-FR-0001.AC-0001
 title: plain sync never invokes Cursor
 description: >
   real Git, simulated Cursor. `WTW_CURSOR_BIN` points at the fake `cursor` shim,

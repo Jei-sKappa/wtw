@@ -1,6 +1,5 @@
 id: init-injected-failure-no-rollback
-covers:
-  - WTW-FR-0004.AC-0404
+covers: INIT-FR-0004.AC-0001
 title: an injected post-write failure reports completed writes without rollback
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A

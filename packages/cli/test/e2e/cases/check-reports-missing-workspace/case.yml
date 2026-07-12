@@ -1,13 +1,12 @@
 id: check-reports-missing-workspace
-covers:
-  - WTW-FR-0009.AC-0906
+covers: WORK-FR-0006.AC-0002
 title: check reports a missing Cursor workspace before repair
 description: >
   real Git, simulated Worktrunk/Cursor. After a healthy `init`, the primary
   workspace file is deleted. `check` reports the Cursor workspace as missing (a
   FAIL; a plain `sync` will recreate it) and marks the Synchronization
   folder-drift check SKIPPED rather than cascading a false failure. The command
-  exits 1. This is the `check`-side report half of AC-09.6.
+  exits 1. This is the `check`-side report half of WORK-FR-0006 (WORK-FR-0006.AC-0002).
 cwd: repo
 env:
   GIT_AUTHOR_NAME: wtw-test

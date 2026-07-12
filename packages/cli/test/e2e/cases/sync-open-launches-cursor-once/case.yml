@@ -1,6 +1,5 @@
 id: sync-open-launches-cursor-once
-covers:
-  - WTW-FR-0010.AC-1002
+covers: CURSOR-FR-0002.AC-0001
 title: sync --open launches Cursor exactly once with the absolute workspace path
 description: >
   real Git, simulated Cursor. After every synchronization write succeeds, `sync

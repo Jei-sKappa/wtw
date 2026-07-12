@@ -1,6 +1,5 @@
 id: init-unknown-option
-covers:
-  - WTW-FR-0002.AC-0203
+covers: CLI-FR-0003.AC-0001
 title: init rejects a command-specific option
 description: >
   `init` accepts no command-specific options; `--open` (valid only on `sync`) is

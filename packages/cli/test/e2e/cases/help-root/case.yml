@@ -1,6 +1,5 @@
 id: help-root
-covers:
-  - WTW-FR-0002.AC-0201
+covers: CLI-FR-0001.AC-0002
 title: Root help via --help
 description: >
   `wtw --help` prints the root help text to stdout and exits 0.

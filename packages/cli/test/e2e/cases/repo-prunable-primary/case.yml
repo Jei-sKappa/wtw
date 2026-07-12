@@ -1,6 +1,5 @@
 id: repo-prunable-primary
-covers:
-  - WTW-FR-0003.AC-0304
+covers: REPO-FR-0004.AC-0004
 title: a prunable primary record fails the support predicate without writes
 description: >
   simulated Git (shape mode, `WTW_GIT_BIN` → the checked-in fake `git` deriving

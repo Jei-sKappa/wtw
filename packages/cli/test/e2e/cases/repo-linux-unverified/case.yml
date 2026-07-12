@@ -1,6 +1,5 @@
 id: repo-linux-unverified
-covers:
-  - WTW-FR-0003.AC-0303
+covers: REPO-FR-0003.AC-0001
 title: a simulated Linux host reports unverified/best-effort without failing
 description: >
   real Git, simulated Worktrunk/Cursor, simulated Linux platform

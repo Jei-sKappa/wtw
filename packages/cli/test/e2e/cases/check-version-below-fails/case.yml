@@ -1,6 +1,5 @@
 id: check-version-below-fails
-covers:
-  - WTW-FR-0012.AC-1201
+covers: COMPAT-FR-0001.AC-0002
 title: check fails the compatibility finding for a version below 0.67.0
 description: >
   real Git, simulated Worktrunk (reports 0.66.9). A version below the inclusive

@@ -1,6 +1,5 @@
 id: help-command
-covers:
-  - WTW-FR-0002.AC-0201
+covers: CLI-FR-0001.AC-0004
 title: Command help via init --help
 description: >
   `wtw init --help` prints the `init` subcommand help to stdout and exits 0.

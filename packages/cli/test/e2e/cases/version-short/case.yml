@@ -1,6 +1,5 @@
 id: version-short
-covers:
-  - WTW-FR-0015.AC-1501
+covers: VER-FR-0001.AC-0002
 title: Version via -V (dev)
 description: >
   `wtw -V` prints the same `<version> (dev)` string to stdout and exits 0.

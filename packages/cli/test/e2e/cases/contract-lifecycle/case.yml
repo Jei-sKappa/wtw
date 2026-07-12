@@ -1,31 +1,80 @@
 id: contract-lifecycle
-covers:
-  - WTW-FR-0013.AC-1301
-  - WTW-FR-0013.AC-1302
-  - WTW-FR-0007.AC-0703
-  - WTW-FR-0006.AC-0604
-title: full real-Worktrunk lifecycle against the built wtw
 mode: scenario
+title: full real-Worktrunk lifecycle against the built wtw
 description: >
   real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven
   by the bespoke scenario test in `contract.test.ts` (run under
   `bun run test:contract`, skipped when the pinned binary is absent). In order:
   `wtw init` on a real repository; native Worktrunk first-use approval observed
   in isolated approval state, which `init` neither grants nor bypasses (the
-  approval store stays empty and a non-`--yes` create refuses for approval);
-  a real `wt switch --create` running the blocking `pre-start` copy so the
+  approval store stays empty and a non-`--yes` create refuses for approval); a
+  real `wt switch --create` running the blocking `pre-start` copy so the
   selected ignored data and BOTH control files exist in the new worktree before
-  the create returns (AC-13.1, AC-07.3), including when the new branch base is a
-  linked-worktree branch whose ignored content diverges from the primary (the
-  primary stays authoritative); the background `post-start` `wtw sync --open`
-  reconciling the workspace, with the fake Cursor recording the exact absolute
-  root-workspace path exactly once and never opening a GUI (AC-13.1); removal
-  invoked from a LINKED worktree via real Worktrunk; and the background
-  `post-remove` `wtw sync` leaving the root workspace without the removed path
-  after the hook completes (AC-13.2). Ordered, background-hook-driven, and
-  bounded-poll assertions cannot be expressed as one command run, so this
-  scenario is verified by the scenario test rather than the generic runner; the
-  first step's observable is `wtw init` reporting initialization.
+  the create returns; the background `post-start` `wtw sync --open` reconciling
+  the workspace, with the fake Cursor recording the exact absolute
+  root-workspace path exactly once and never opening a GUI; removal invoked from
+  a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw
+  sync` leaving the root workspace without the removed path after the hook
+  completes. Ordered, background-hook-driven, and bounded-poll assertions cannot
+  be expressed as one command run, so this scenario is verified by the scenario
+  test rather than the generic runner; the first step's observable is `wtw init`
+  reporting initialization. The primary-authoritative copy source off a
+  divergent linked base is the separate second lifecycle proof declared by
+  `contract-linked-base`.
+checkpoints:
+  - id: native-approval-refused
+    title: native worktree-create approval is refused without explicit approval
+    description: >
+      A non-interactive real Worktrunk `switch --create` without explicit
+      approval is refused by the native approval gate, which wtw neither grants
+      nor bypasses.
+    covers: WTA-FR-0001.AC-0001
+  - id: approval-store-empty
+    title: a refused create leaves the native approval store empty
+    description: >
+      After the refused create, the isolated native Worktrunk approval store is
+      still empty, proving init granted nothing.
+    covers: WTA-FR-0001.AC-0002
+  - id: prestart-ignored-data
+    title: selected ignored data exists before the create returns
+    description: >
+      The blocking `pre-start` hook runs before a successful create returns, so
+      selected ignored data copied from the primary already exists in the new
+      worktree the moment the create command returns.
+    covers: WTA-FR-0002.AC-0001
+  - id: prestart-control-files
+    title: both control files exist before the create returns
+    description: >
+      The blocking `pre-start` hook copies both control files
+      (`.config/wt.toml` and `.worktreeinclude`) from the primary, so both exist
+      in the new worktree the moment a successful create returns.
+    covers: WTA-FR-0002.AC-0002
+  - id: poststart-workspace-reconciled
+    title: post-start hook reconciles the workspace to list the new worktree
+    description: >
+      After a successful create, the background `post-start` `wtw sync --open`
+      reconciles the root workspace `folders` to list the newly created
+      worktree.
+    covers: WTA-FR-0004.AC-0001
+  - id: poststart-editor-opened-once
+    title: post-start hook opens the editor once on the root workspace path
+    description: >
+      The background `post-start` hook launches the fake Cursor exactly once on
+      the absolute root-workspace path and never opens a GUI.
+    covers: WTA-FR-0004.AC-0002
+  - id: postremove-workspace-dropped
+    title: post-remove hook drops the removed worktree from the workspace
+    description: >
+      Removal invoked from a linked worktree fires the background `post-remove`
+      `wtw sync`, which reconciles the root workspace to drop the removed
+      worktree after the hook completes.
+    covers: WTA-FR-0005.AC-0001
+  - id: postremove-no-editor
+    title: post-remove reconciliation opens no editor
+    description: >
+      The `post-remove` synchronization carries no launch flag, so it opens no
+      editor.
+    covers: WTA-FR-0005.AC-0002
 cwd: repo
 env:
   GIT_AUTHOR_NAME: wtw-test

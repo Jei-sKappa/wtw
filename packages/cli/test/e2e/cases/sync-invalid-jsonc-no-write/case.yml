@@ -1,6 +1,5 @@
 id: sync-invalid-jsonc-no-write
-covers:
-  - WTW-FR-0009.AC-0903
+covers: WORK-FR-0003.AC-0001
 title: invalid JSONC fails sync without changing the workspace
 description: >
   real Git, simulated nothing. The primary workspace file is invalid JSONC.

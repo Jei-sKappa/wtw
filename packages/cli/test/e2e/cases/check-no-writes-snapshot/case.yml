@@ -1,6 +1,5 @@
 id: check-no-writes-snapshot
-covers:
-  - WTW-FR-0011.AC-1104
+covers: CHECK-FR-0004.AC-0001
 title: check changes no repository, control, workspace, lock, or Cursor state
 description: >
   real Git, simulated Worktrunk/Cursor. After a healthy `init`, `check` runs and

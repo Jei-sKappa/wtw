@@ -1,6 +1,5 @@
 id: check-version-0680-warns
-covers:
-  - WTW-FR-0012.AC-1201
+covers: COMPAT-FR-0001.AC-0003
 title: check warns (does not fail) for Worktrunk 0.68.0 and newer
 description: >
   real Git, simulated Worktrunk (reports 0.68.0). `0.68.0` is the exclusive

@@ -1,0 +1,42 @@
+id: contract-linked-base
+mode: scenario
+title: primary-authoritative copy source off a divergent linked base
+description: >
+  real Git, real Worktrunk v0.67.0, simulated Cursor. The second lifecycle proof
+  in `contract.test.ts` (run under `bun run test:contract`, skipped when the
+  pinned binary is absent): a new worktree whose branch base is a LINKED worktree
+  whose ignored content has diverged from the primary. The blocking `pre-start`
+  copy always sources from the primary worktree, so the new worktree receives the
+  primary's ignored data and both control files, not the divergent base's.
+  Ordered, background-hook-driven assertions cannot be expressed as one command
+  run, so this scenario is verified by the scenario test rather than the generic
+  runner; the first step's observable is `wtw init` reporting initialization.
+checkpoints:
+  - id: linked-base-ignored-data-from-primary
+    title: ignored data off a divergent linked base matches the primary
+    description: >
+      When a worktree is created off a divergent linked base, the pre-start copy
+      sources from the primary, so the new worktree's ignored data matches the
+      primary rather than the divergent base.
+    covers: WTA-FR-0003.AC-0001
+  - id: linked-base-control-files-present
+    title: both control files are present off a linked base
+    description: >
+      A worktree created off a linked base receives both control files
+      (`.config/wt.toml` and `.worktreeinclude`) copied from the primary.
+    covers: WTA-FR-0003.AC-0002
+cwd: repo
+env:
+  GIT_AUTHOR_NAME: wtw-test
+  GIT_AUTHOR_EMAIL: wtw@example.com
+  GIT_COMMITTER_NAME: wtw-test
+  GIT_COMMITTER_EMAIL: wtw@example.com
+setup:
+  - run: { cmd: ["git", "init", "-b", "main", "."] }
+  - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
+command: ["init"]
+expect:
+  exitCode: 0
+  stdoutContains:
+    - "Initialized wtw local automation for this repository."
+  stderr: ""

@@ -1,7 +1,5 @@
 id: check-nonrepo-skips-dependents
-covers:
-  - WTW-FR-0011.AC-1103
-  - WTW-FR-0003.AC-0303
+covers: CHECK-FR-0003.AC-0001
 title: an unresolved repository context marks dependent checks skipped, no cascade
 description: >
   real Git, simulated Worktrunk/Cursor. `check` runs in a non-repository

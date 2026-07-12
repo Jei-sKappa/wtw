@@ -1,6 +1,5 @@
 id: sync-lock-timeout-no-writes
-covers:
-  - WTW-FR-0008.AC-0804
+covers: SYNC-FR-0004.AC-0001
 title: lock timeout exits 1 and writes nothing
 description: >
   real Git, simulated nothing. A fresh (non-stale) mutex directory is pre-created

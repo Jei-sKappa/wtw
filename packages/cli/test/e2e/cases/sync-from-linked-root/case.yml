@@ -1,12 +1,11 @@
 id: sync-from-linked-root
-covers:
-  - WTW-FR-0003.AC-0301
+covers: REPO-FR-0001.AC-0003
 title: sync resolves the same primary context when run from a linked worktree
 description: >
   real Git, simulated Worktrunk/Cursor. The primary lives at `repo`; a linked
   worktree `wt-a` is created and initialized. Plain `sync` invoked from the
   LINKED worktree root resolves the shared primary/common context, reconciles
-  successfully, and exits 0. (Location independence, AC-03.1.)
+  successfully, and exits 0. (Location independence, REPO-FR-0001.AC-0003.)
 cwd: wt-a
 env:
   GIT_AUTHOR_NAME: wtw-test

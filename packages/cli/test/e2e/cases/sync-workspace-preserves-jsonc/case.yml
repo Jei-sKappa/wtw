@@ -1,6 +1,5 @@
 id: sync-workspace-preserves-jsonc
-covers:
-  - WTW-FR-0009.AC-0902
+covers: WORK-FR-0002.AC-0001
 title: sync edits only folders and preserves surrounding JSONC
 description: >
   real Git, simulated nothing. The primary workspace is valid JSONC with a

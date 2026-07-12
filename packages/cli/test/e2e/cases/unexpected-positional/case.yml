@@ -1,6 +1,5 @@
 id: unexpected-positional
-covers:
-  - WTW-FR-0002.AC-0202
+covers: CLI-FR-0002.AC-0003
 title: Unexpected positional argument is rejected
 description: >
   A command that accepts no positional arguments rejects an extra positional,

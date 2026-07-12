@@ -1,6 +1,5 @@
 id: init-exclude-block-preserves
-covers:
-  - WTW-FR-0005.AC-0501
+covers: PRIV-FR-0001.AC-0001
 title: init creates the managed exclude block preserving unrelated bytes
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An

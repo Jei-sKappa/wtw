@@ -1,6 +1,5 @@
 id: init-adopts-existing-workspace
-covers:
-  - WTW-FR-0009.AC-0901
+covers: WORK-FR-0001.AC-0002
 title: init adopts an existing valid workspace, preserving everything outside folders
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). The

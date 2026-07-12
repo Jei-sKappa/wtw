@@ -1,7 +1,5 @@
 id: sync-raw-git-worktree-repaired
-covers:
-  - WTW-FR-0008.AC-0805
-  - WTW-FR-0013.AC-1303
+covers: SYNC-FR-0005.AC-0002
 title: raw-git linked worktree gains control files and workspace entry
 description: >
   real Git, simulated nothing. A linked worktree created by raw `git worktree

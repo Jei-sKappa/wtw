@@ -1,6 +1,5 @@
 id: repo-windows-unsupported
-covers:
-  - WTW-FR-0003.AC-0303
+covers: REPO-FR-0003.AC-0002
 title: a simulated Windows host is an unsupported platform failure without writes
 description: >
   real Git, simulated Worktrunk/Cursor, simulated Windows platform

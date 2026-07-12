@@ -1,6 +1,5 @@
 id: check-warns-stale-registration
-covers:
-  - WTW-FR-0009.AC-0905
+covers: WORK-FR-0005.AC-0002
 title: check warns about a stale worktree registration with cleanup guidance
 description: >
   real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked
@@ -8,7 +7,7 @@ description: >
   missing/prunable registration. `check` excludes it from the folder list (no
   drift) but reports a WARN under Cursor workspace with native cleanup guidance
   (`git worktree prune` / `git worktree remove`); `wtw` never prunes it. A
-  warning-only run exits 0. (AC-09.5 check-side WARNING.)
+  warning-only run exits 0. (the check-side WARNING, WORK-FR-0005.AC-0002.)
 cwd: repo
 env:
   GIT_AUTHOR_NAME: wtw-test

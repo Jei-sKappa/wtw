@@ -1,6 +1,5 @@
 id: sync-open-launch-failure-preserves
-covers:
-  - WTW-FR-0010.AC-1003
+covers: CURSOR-FR-0003.AC-0001
 title: a Cursor launch failure after writes preserves files and exits 1
 description: >
   real Git, simulated Cursor failure. The fake `cursor` is driven to exit

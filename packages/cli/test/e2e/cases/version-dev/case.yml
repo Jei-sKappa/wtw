@@ -1,6 +1,5 @@
 id: version-dev
-covers:
-  - WTW-FR-0015.AC-1501
+covers: VER-FR-0001.AC-0001
 title: Version via --version (dev)
 description: >
   A source/test run of `wtw --version` prints exactly the CLI package version

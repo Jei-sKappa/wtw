@@ -1,12 +1,11 @@
 id: init-from-nested-primary
-covers:
-  - WTW-FR-0003.AC-0301
+covers: REPO-FR-0001.AC-0002
 title: init resolves the primary context when run from a nested primary directory
 description: >
   real Git, simulated Worktrunk/Cursor. `init` is invoked from a directory
   nested deep inside the primary worktree (`repo/src/deep`). It resolves the
   primary/common context, creates the canonical artifacts at the primary root
-  `repo`, and exits 0. (Location independence, AC-03.1.)
+  `repo`, and exits 0. (Location independence, REPO-FR-0001.AC-0002.)
 cwd: repo/src/deep
 env:
   GIT_AUTHOR_NAME: wtw-test

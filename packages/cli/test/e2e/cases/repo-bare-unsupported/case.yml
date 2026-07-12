@@ -1,6 +1,5 @@
 id: repo-bare-unsupported
-covers:
-  - WTW-FR-0003.AC-0303
+covers: REPO-FR-0004.AC-0001
 title: a bare repository is an unsupported repository-shape failure without writes
 description: >
   real Git, simulated Worktrunk/Cursor. `check` runs in a bare repository. The

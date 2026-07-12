@@ -1,6 +1,5 @@
 id: init-hook-conflict-no-writes
-covers:
-  - WTW-FR-0006.AC-0603
+covers: CONF-FR-0003.AC-0001
 title: a missing reserved hook makes init perform no writes and print exact additions
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). An

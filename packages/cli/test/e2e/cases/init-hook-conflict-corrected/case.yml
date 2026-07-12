@@ -1,6 +1,5 @@
 id: init-hook-conflict-corrected
-covers:
-  - WTW-FR-0006.AC-0603
+covers: CONF-FR-0003.AC-0002
 title: after correcting a hook conflict, rerunning init succeeds without rewriting
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A

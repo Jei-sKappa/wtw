@@ -1,6 +1,5 @@
 id: unknown-command
-covers:
-  - WTW-FR-0002.AC-0202
+covers: CLI-FR-0002.AC-0001
 title: Unknown command is rejected
 description: >
   An unknown command exits 1 with exactly one `Error: <message>` line on stderr

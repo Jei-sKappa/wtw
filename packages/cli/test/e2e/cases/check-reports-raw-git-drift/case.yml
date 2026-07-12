@@ -1,6 +1,5 @@
 id: check-reports-raw-git-drift
-covers:
-  - WTW-FR-0008.AC-0805
+covers: SYNC-FR-0005.AC-0001
 title: check reports a raw-git linked worktree as synchronization drift
 description: >
   real Git, simulated Worktrunk/Cursor. After a healthy `init`, a linked
@@ -8,7 +7,7 @@ description: >
   hooks), so it has no control files and is absent from the workspace folders.
   `check` reports this as Synchronization drift — divergent/missing linked
   control files AND out-of-date workspace folders — and exits 1. This is the
-  read-only REPORT half of AC-08.5 (the repair is proven by `wtw sync`).
+  read-only REPORT half of SYNC-FR-0005 (SYNC-FR-0005.AC-0001; the repair is proven by `wtw sync`).
 cwd: repo
 env:
   GIT_AUTHOR_NAME: wtw-test

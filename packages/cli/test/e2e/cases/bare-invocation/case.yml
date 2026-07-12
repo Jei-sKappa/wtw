@@ -1,6 +1,5 @@
 id: bare-invocation
-covers:
-  - WTW-FR-0002.AC-0201
+covers: CLI-FR-0001.AC-0001
 title: Bare invocation prints root help
 description: >
   Running `wtw` with no arguments displays the root help. Commander's

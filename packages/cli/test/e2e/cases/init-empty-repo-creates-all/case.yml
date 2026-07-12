@@ -1,12 +1,5 @@
 id: init-empty-repo-creates-all
-covers:
-  - WTW-FR-0004.AC-0402
-  - WTW-FR-0006.AC-0601
-  - WTW-FR-0006.AC-0604
-  - WTW-FR-0007.AC-0701
-  - WTW-FR-0009.AC-0901
-  - WTW-FR-0009.AC-0904
-  - WTW-FR-0010.AC-1001
+covers: INIT-FR-0001.AC-0001
 title: init creates every canonical artifact and synchronizes linked worktrees
 description: >
   real Git, simulated Worktrunk/Cursor (each resolved on PATH, never spawned).

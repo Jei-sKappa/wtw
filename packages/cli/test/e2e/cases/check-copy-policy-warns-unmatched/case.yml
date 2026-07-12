@@ -1,14 +1,12 @@
 id: check-copy-policy-warns-unmatched
-covers:
-  - WTW-FR-0011.AC-1102
-  - WTW-FR-0007.AC-0702
+covers: COPY-FR-0002.AC-0002
 title: check warns (not fails) for a copy-policy entry matching no ignored content
 description: >
   real Git, simulated Worktrunk/Cursor. After init, `.worktreeinclude` is
   rewritten to keep both required control entries plus a user entry
   (`secret-data/`) that currently matches no ignored path. `check` reports that
   entry as a WARN — never a FAIL — the summary carries one warning and zero
-  failures, and the command exits 0 (a warning-only run). (AC-07.2 WARN half.)
+  failures, and the command exits 0 (a warning-only run). (the WARN half, COPY-FR-0002.AC-0002.)
 cwd: repo
 env:
   GIT_AUTHOR_NAME: wtw-test

@@ -1,6 +1,5 @@
 id: check-version-0670-passes
-covers:
-  - WTW-FR-0012.AC-1201
+covers: COMPAT-FR-0001.AC-0001
 title: check passes the compatibility finding for Worktrunk 0.67.0
 description: >
   real Git, simulated Worktrunk (reports 0.67.0 via `wt --version`). `check`

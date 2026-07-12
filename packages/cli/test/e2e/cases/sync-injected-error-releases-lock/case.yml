@@ -1,6 +1,5 @@
 id: sync-injected-error-releases-lock
-covers:
-  - WTW-FR-0008.AC-0804
+covers: SYNC-FR-0004.AC-0002
 title: an injected error still releases the lock
 description: >
   real Git, simulated nothing. A first `sync` is driven to throw AFTER acquiring

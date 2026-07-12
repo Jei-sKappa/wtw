@@ -1,6 +1,5 @@
 id: sync-unknown-option
-covers:
-  - WTW-FR-0002.AC-0203
+covers: CLI-FR-0003.AC-0002
 title: sync accepts only --open
 description: >
   `sync` accepts only the `--open` option; any other option is rejected, exiting

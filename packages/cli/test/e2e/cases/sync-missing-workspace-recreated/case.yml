@@ -1,6 +1,5 @@
 id: sync-missing-workspace-recreated
-covers:
-  - WTW-FR-0009.AC-0906
+covers: WORK-FR-0006.AC-0001
 title: sync recreates a missing workspace with the minimal scaffold
 description: >
   real Git, simulated nothing. No workspace file exists in the primary. Plain

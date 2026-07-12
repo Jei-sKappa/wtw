@@ -1,6 +1,5 @@
 id: sync-concurrent-serializes
-covers:
-  - WTW-FR-0008.AC-0803
+covers: SYNC-FR-0003.AC-0001
 title: overlapping syncs serialize and write final Git state
 description: >
   real Git, simulated nothing. A first `sync` is launched in the background and

@@ -1,6 +1,5 @@
 id: sync-control-files-byte-identical
-covers:
-  - WTW-FR-0008.AC-0801
+covers: SYNC-FR-0001.AC-0001
 title: sync overwrites divergent linked control files
 description: >
   real Git, simulated nothing. With a real primary and one linked worktree

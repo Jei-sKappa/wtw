@@ -1,7 +1,5 @@
 id: init-tracked-path-no-writes
-covers:
-  - WTW-FR-0004.AC-0401
-  - WTW-FR-0005.AC-0502
+covers: PRIV-FR-0002.AC-0001
 title: a tracked required private path makes init perform no writes
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A

@@ -1,13 +1,12 @@
 id: check-tracked-path-fails
-covers:
-  - WTW-FR-0005.AC-0502
+covers: PRIV-FR-0002.AC-0002
 title: check fails when a required private path is tracked by Git
 description: >
   real Git, simulated Worktrunk/Cursor. After a healthy `init`, a required
   private path (`.worktreeinclude`) is force-added and committed, so Git tracks
   it. Because a local exclude cannot hide a tracked file, `check` emits a
   Privacy FAIL naming the tracked path and exits 1 (the complementary check-side
-  half of AC-05.2; the `init` no-write half is proven by
+  half of PRIV-FR-0002 (PRIV-FR-0002.AC-0002); the `init` no-write half is proven by
   `init-tracked-path-no-writes`).
 cwd: repo
 env:

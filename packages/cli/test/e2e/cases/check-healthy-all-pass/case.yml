@@ -1,7 +1,5 @@
 id: check-healthy-all-pass
-covers:
-  - WTW-FR-0011.AC-1101
-  - WTW-FR-0003.AC-0301
+covers: CHECK-FR-0001.AC-0001
 title: check prints every category in order with only PASS findings and exits 0
 description: >
   real Git, simulated Worktrunk/Cursor (each resolved on PATH; only `wt
@@ -10,7 +8,7 @@ description: >
   every finding is PASS, the summary counts are deterministic, no Cursor launch
   occurs, and it exits 0. The full-stdout compare proves the exact category
   order and counts. Running from the primary root also proves context
-  resolution (AC-03.1).
+  resolution (REPO-FR-0001).
 cwd: repo
 substitute:
   __PROJECT_ROOT__: projectRoot

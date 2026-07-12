@@ -1,6 +1,5 @@
 id: repo-permission-post-discovery
-covers:
-  - WTW-FR-0003.AC-0304
+covers: REPO-FR-0005.AC-0001
 title: a post-discovery Git failure is reported as an ordinary command failure
 description: >
   simulated Git (shape mode; the fake succeeds on `--git-common-dir`, the

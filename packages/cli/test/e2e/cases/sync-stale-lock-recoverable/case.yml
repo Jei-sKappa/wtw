@@ -1,6 +1,5 @@
 id: sync-stale-lock-recoverable
-covers:
-  - WTW-FR-0008.AC-0804
+covers: SYNC-FR-0004.AC-0003
 title: a recognized stale lock is recovered
 description: >
   real Git, simulated nothing. A mutex directory is pre-created and back-dated

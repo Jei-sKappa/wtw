@@ -1,6 +1,5 @@
 id: init-prunable-excluded
-covers:
-  - WTW-FR-0009.AC-0905
+covers: WORK-FR-0005.AC-0001
 title: init excludes a missing worktree from folders and never prunes it
 description: >
   real Git, simulated Worktrunk/Cursor (resolved on PATH, never spawned). A
