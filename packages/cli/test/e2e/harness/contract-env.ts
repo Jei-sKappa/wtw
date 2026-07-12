@@ -5,7 +5,7 @@ import path from "node:path";
 
 // Contract-mode environment wiring (Task 15). The external-contract suite runs
 // the BUILT `wtw` artifact against real Git, the fake Cursor, and a PINNED real
-// Worktrunk v0.62.0 binary in isolated home/config/approval state. This module
+// Worktrunk v0.67.0 binary in isolated home/config/approval state. This module
 // owns two machine-dependent concerns a checked-in case.yml cannot encode:
 //
 //   1. Resolving and version-pinning the real `wt` binary (so the suite SKIPS
@@ -16,7 +16,7 @@ import path from "node:path";
 //      `wtw sync --open`) resolve to exactly these executables.
 
 /** The exact Worktrunk version the contract suite is pinned to (spec AC-12.2). */
-export const PINNED_WORKTRUNK_VERSION = "0.62.0";
+export const PINNED_WORKTRUNK_VERSION = "0.67.0";
 
 /** The fake Cursor shim, relative to the CLI package root (`repoRoot`). */
 const FAKE_CURSOR_REL = "test/e2e/harness/fake-cursor/cursor";
@@ -62,7 +62,7 @@ export type WorktrunkResolution =
   | { readonly ok: false; readonly reason: string };
 
 /**
- * Resolve the real `wt` binary and confirm it reports the pinned v0.62.0. Any
+ * Resolve the real `wt` binary and confirm it reports the pinned v0.67.0. Any
  * failure (absent binary, non-zero exit, unparseable or non-pinned version)
  * yields a skip reason instead of throwing, so the suite is portable.
  */

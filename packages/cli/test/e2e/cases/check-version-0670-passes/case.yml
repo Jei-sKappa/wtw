@@ -1,10 +1,10 @@
-id: check-version-0620-passes
+id: check-version-0670-passes
 covers:
   - WTW-FR-0012.AC-1201
-title: check passes the compatibility finding for Worktrunk 0.62.0
+title: check passes the compatibility finding for Worktrunk 0.67.0
 description: >
-  real Git, simulated Worktrunk (reports 0.62.0 via `wt --version`). `check`
-  evaluates the version against the verified range `>=0.62.0 <0.63.0`: 0.62.0 is
+  real Git, simulated Worktrunk (reports 0.67.0 via `wt --version`). `check`
+  evaluates the version against the verified range `>=0.67.0 <0.68.0`: 0.67.0 is
   the inclusive minimum, so the Worktrunk category PASSes and the command exits
   0.
 cwd: repo
@@ -18,7 +18,7 @@ env:
   WTW_NODE_BIN: __FAKE_GIT_BIN__
   WTW_WTW_BIN: __FAKE_GIT_BIN__
   WTW_PLATFORM: darwin
-  FAKE_WT_VERSION: "0.62.0"
+  FAKE_WT_VERSION: "0.67.0"
 setup:
   - run: { cmd: ["git", "init", "-b", "main", "."] }
   - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
@@ -27,6 +27,6 @@ command: ["check"]
 expect:
   exitCode: 0
   stdoutContains:
-    - "PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0."
+    - "PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0."
     - "16 pass, 0 warn, 0 fail"
   stderr: ""

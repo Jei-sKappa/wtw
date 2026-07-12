@@ -7,7 +7,7 @@ covers:
 title: full real-Worktrunk lifecycle against the built wtw
 mode: scenario
 description: >
-  real Git, real Worktrunk v0.62.0, simulated Cursor. The full lifecycle proven
+  real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven
   by the bespoke scenario test in `contract.test.ts` (run under
   `bun run test:contract`, skipped when the pinned binary is absent). In order:
   `wtw init` on a real repository; native Worktrunk first-use approval observed

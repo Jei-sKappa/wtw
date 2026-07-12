@@ -277,10 +277,10 @@ describe("fake executables", () => {
   it("fake wt reports a Worktrunk version and injects failure", async () => {
     const cwd = await makeTempDir();
     const version = await run(FAKE_WT, ["--version"], cwd, {
-      FAKE_WT_VERSION: "0.62.0",
+      FAKE_WT_VERSION: "0.67.0",
     });
     expect(version.exitCode).toBe(0);
-    expect(version.stdout.trim()).toBe("0.62.0");
+    expect(version.stdout.trim()).toBe("0.67.0");
 
     const failed = await run(FAKE_WT, ["start", "feature"], cwd, {
       FAKE_WT_FAIL: "1",

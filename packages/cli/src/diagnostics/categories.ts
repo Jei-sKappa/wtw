@@ -153,7 +153,7 @@ function resolveWtBinary(): string {
 /**
  * Spawn `wt --version` (read-only) and return the resolved Worktrunk version, or
  * `null` when Worktrunk is absent, exits non-zero, or prints nothing. Real
- * Worktrunk prints `wt v0.62.0` — a `wt v` prefix wrapping the semver — so the
+ * Worktrunk prints `wt v0.67.0` — a `wt v` prefix wrapping the semver — so the
  * raw output is scanned for the first `major.minor.patch` token and that clean
  * token is returned; output that carries no version triple (e.g. `banana`) is
  * returned verbatim so the pure evaluator reports it as unparseable. This is the

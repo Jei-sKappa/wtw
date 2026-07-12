@@ -20,7 +20,7 @@ import {
 } from "./harness/contract-env";
 
 // External-contract suite (Task 15). Runs the BUILT `wtw` artifact against real
-// Git, a pinned real Worktrunk v0.62.0 binary, isolated home/config/approval
+// Git, a pinned real Worktrunk v0.67.0 binary, isolated home/config/approval
 // state, and the fake Cursor. It proves the real lifecycle end to end — every
 // piece of evidence here is REAL GIT + REAL WORKTRUNK; only Cursor is SIMULATED
 // (the fake shim records the launch and never opens a GUI). It runs ONLY under
@@ -94,11 +94,11 @@ async function poll(
 }
 
 if (!worktrunk.ok) {
-  describe("external contract suite (real Worktrunk v0.62.0)", () => {
+  describe("external contract suite (real Worktrunk v0.67.0)", () => {
     it.skip(`SKIPPED: ${worktrunk.reason}`, () => {});
   });
 } else if (!built) {
-  describe("external contract suite (real Worktrunk v0.62.0)", () => {
+  describe("external contract suite (real Worktrunk v0.67.0)", () => {
     it.skip("SKIPPED: built wtw artifact missing; run `bun run build` (test:contract does this)", () => {});
   });
 } else {
@@ -165,7 +165,7 @@ function runContractSuite(wtBin: string, wtVersion: string): void {
 
   it(`resolves the pinned real Worktrunk v${wtVersion} binary`, () => {
     // real Worktrunk: the pinned binary is the one every scenario below drives.
-    expect(wtVersion).toBe("0.62.0");
+    expect(wtVersion).toBe("0.67.0");
     expect(existsSync(wtBin)).toBe(true);
   });
 

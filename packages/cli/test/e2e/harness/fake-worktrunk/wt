@@ -3,20 +3,20 @@
 // Test-only fake `wt` (Worktrunk) for hermetic, offline e2e coverage of wtw's
 // Worktrunk-dependent paths (real-vs-simulated: this is SIMULATED Worktrunk; its
 // evidence must never be presented as real lifecycle proof — the real contract
-// suite in Task 15 uses a pinned real v0.62.0 binary). A case selects it by
+// suite in Task 15 uses a pinned real v0.67.0 binary). A case selects it by
 // pointing an executable-resolution env var at this file via the
 // `__FAKE_WT_BIN__` sentinel the runner rewrites to this file's absolute path.
 //
 // It records every invocation and injects deterministic behavior via env:
 //
-//   wt --version           -> prints FAKE_WT_VERSION (default 0.62.0), exit 0
+//   wt --version           -> prints FAKE_WT_VERSION (default 0.67.0), exit 0
 //   any other invocation   -> prints FAKE_WT_STDOUT (if set), exit 0, unless
 //                             FAKE_WT_FAIL is set (then exit non-zero after
 //                             writing FAKE_WT_STDERR)
 //
 // Wiring (all via the case's `env:` map):
 //   __FAKE_WT_BIN__   sentinel the runner resolves to this script's abs path
-//   FAKE_WT_VERSION   version string `--version` reports (default 0.62.0)
+//   FAKE_WT_VERSION   version string `--version` reports (default 0.67.0)
 //   FAKE_WT_STDOUT    stdout text emitted for a non-`--version` invocation
 //   FAKE_WT_FAIL      when set (non-empty), exit non-zero after writing stderr
 //   FAKE_WT_STDERR    stderr text emitted when FAKE_WT_FAIL is set
@@ -48,7 +48,7 @@ function main() {
   recordInvocation();
 
   if (argv.includes("--version")) {
-    process.stdout.write(`${process.env.FAKE_WT_VERSION ?? "0.62.0"}\n`);
+    process.stdout.write(`${process.env.FAKE_WT_VERSION ?? "0.67.0"}\n`);
     process.exit(0);
   }
 

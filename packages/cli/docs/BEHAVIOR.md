@@ -17,8 +17,8 @@ fake shim, or **Not exercised** (the dependency is not wired into the case —
 a pure surface case, or a Worktrunk scenario modelled with raw Git so no
 `wt` binary runs). Simulated evidence is never real lifecycle proof:
 real-Worktrunk evidence comes only from the external-contract suite, so the
-verified Worktrunk range `>=0.62.0 <0.63.0` is represented as supported
-solely because that suite passes against the pinned real v0.62.0 binary
+verified Worktrunk range `>=0.67.0 <0.68.0` is represented as supported
+solely because that suite passes against the pinned real v0.67.0 binary
 (see `WTW-FR-0012`).
 
 ## Contents
@@ -517,7 +517,7 @@ Privacy
   PASS  No required private path is tracked by Git.
   PASS  Managed info/exclude block is present.
 Worktrunk
-  PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
+  PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
   PASS  .config/wt.toml carries the reserved wtw hooks.
 Copy policy
   PASS  .worktreeinclude carries both required control entries.
@@ -1630,14 +1630,14 @@ Error: init cannot proceed; resolve the following, then rerun (wtw made no chang
 
 #### Case: full real-Worktrunk lifecycle against the built wtw
 
-Description: real Git, real Worktrunk v0.62.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
 
 Covers: AC-0604
 
 <details>
 <summary>Evidence, input, command & output</summary>
 
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.62.0)
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
 
 - Git: Real
 - Worktrunk: Real
@@ -2134,14 +2134,14 @@ WARN  .worktreeinclude entry "secret-data/" matches no currently ignored path
 
 #### Case: full real-Worktrunk lifecycle against the built wtw
 
-Description: real Git, real Worktrunk v0.62.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
 
 Covers: AC-0703
 
 <details>
 <summary>Evidence, input, command & output</summary>
 
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.62.0)
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
 
 - Git: Real
 - Worktrunk: Real
@@ -4275,7 +4275,7 @@ Privacy
   PASS  No required private path is tracked by Git.
   PASS  Managed info/exclude block is present.
 Worktrunk
-  PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
+  PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
   PASS  .config/wt.toml carries the reserved wtw hooks.
 Copy policy
   PASS  .worktreeinclude carries both required control entries.
@@ -4437,16 +4437,16 @@ SKIPPED  Skipped because the repository context is unavailable.
 
 ### WTW-FR-0012 — Worktrunk compatibility
 
-The verified Worktrunk range is `>=0.62.0 <0.63.0`. `wtw check` resolves the Worktrunk version (`wt --version`, read-only) and evaluates it: a version in range passes; a version below `0.62.0` and an unparseable/absent version fail; `0.63.0` and newer warn as unverified but are not blocked.
+The verified Worktrunk range is `>=0.67.0 <0.68.0`. `wtw check` resolves the Worktrunk version (`wt --version`, read-only) and evaluates it: a version in range passes; a version below `0.67.0` and an unparseable/absent version fail; `0.68.0` and newer warn as unverified but are not blocked.
 
 | Criterion | Statement | Coverage |
 | --- | --- | --- |
-| AC-1201 | Parsed versions `0.62.0` and a later `0.62.x` pass the compatibility finding; a version below `0.62.0` fails; `0.63.0` and a later version warn but do not fail; unparseable output fails. (spec AC-12.1) | ✅ `check-version-0620-passes`, `check-version-0629-passes`, `check-version-0630-warns`, `check-version-below-fails`, `check-version-unparseable-fails` |
-| AC-1202 | The external-contract suite runs the built `wtw` against a pinned real Worktrunk v0.62.0 binary and passes: `wtw check` resolves the real `wt --version` output (`wt v0.62.0`) and PASSes the Worktrunk compatibility finding, backing the verified range before it is represented as supported in the living document. (spec AC-12.2) | ✅ `contract-worktrunk-compat` |
+| AC-1201 | Parsed versions `0.67.0` and a later `0.67.x` pass the compatibility finding; a version below `0.67.0` fails; `0.68.0` and a later version warn but do not fail; unparseable output fails. (spec AC-12.1) | ✅ `check-version-0670-passes`, `check-version-0679-passes`, `check-version-0680-warns`, `check-version-below-fails`, `check-version-unparseable-fails` |
+| AC-1202 | The external-contract suite runs the built `wtw` against a pinned real Worktrunk v0.67.0 binary and passes: `wtw check` resolves the real `wt --version` output (`wt v0.67.0`) and PASSes the Worktrunk compatibility finding, backing the verified range before it is represented as supported in the living document. (spec AC-12.2) | ✅ `contract-worktrunk-compat` |
 
-#### Case: check passes the compatibility finding for Worktrunk 0.62.0
+#### Case: check passes the compatibility finding for Worktrunk 0.67.0
 
-Description: real Git, simulated Worktrunk (reports 0.62.0 via `wt --version`). `check` evaluates the version against the verified range `>=0.62.0 <0.63.0`: 0.62.0 is the inclusive minimum, so the Worktrunk category PASSes and the command exits 0.
+Description: real Git, simulated Worktrunk (reports 0.67.0 via `wt --version`). `check` evaluates the version against the verified range `>=0.67.0 <0.68.0`: 0.67.0 is the inclusive minimum, so the Worktrunk category PASSes and the command exits 0.
 
 Covers: AC-1201
 
@@ -4482,15 +4482,15 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
+PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
 16 pass, 0 warn, 0 fail
 ```
 
 </details>
 
-#### Case: check passes the compatibility finding for a later 0.62.x
+#### Case: check passes the compatibility finding for a later 0.67.x
 
-Description: real Git, simulated Worktrunk (reports 0.62.9). A later `0.62.x` patch remains inside the verified range `>=0.62.0 <0.63.0`, so the Worktrunk category PASSes and the command exits 0.
+Description: real Git, simulated Worktrunk (reports 0.67.9). A later `0.67.x` patch remains inside the verified range `>=0.67.0 <0.68.0`, so the Worktrunk category PASSes and the command exits 0.
 
 Covers: AC-1201
 
@@ -4526,15 +4526,15 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-PASS  Worktrunk 0.62.9 is within the verified range >=0.62.0 <0.63.0.
+PASS  Worktrunk 0.67.9 is within the verified range >=0.67.0 <0.68.0.
 16 pass, 0 warn, 0 fail
 ```
 
 </details>
 
-#### Case: check warns (does not fail) for Worktrunk 0.63.0 and newer
+#### Case: check warns (does not fail) for Worktrunk 0.68.0 and newer
 
-Description: real Git, simulated Worktrunk (reports 0.63.0). `0.63.0` is the exclusive upper bound of the verified range, so it is treated as unverified: the Worktrunk category WARNs but does not fail, and the command exits 0.
+Description: real Git, simulated Worktrunk (reports 0.68.0). `0.68.0` is the exclusive upper bound of the verified range, so it is treated as unverified: the Worktrunk category WARNs but does not fail, and the command exits 0.
 
 Covers: AC-1201
 
@@ -4570,15 +4570,15 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-WARN  Worktrunk 0.63.0 is newer than the verified range
+WARN  Worktrunk 0.68.0 is newer than the verified range
 1 warn, 0 fail
 ```
 
 </details>
 
-#### Case: check fails the compatibility finding for a version below 0.62.0
+#### Case: check fails the compatibility finding for a version below 0.67.0
 
-Description: real Git, simulated Worktrunk (reports 0.61.9). A version below the inclusive minimum `0.62.0` fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
+Description: real Git, simulated Worktrunk (reports 0.66.9). A version below the inclusive minimum `0.67.0` fails the compatibility finding, so the Worktrunk category FAILs and the command exits 1.
 
 Covers: AC-1201
 
@@ -4614,7 +4614,7 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-FAIL  Worktrunk 0.61.9 is below the minimum verified version 0.62.0
+FAIL  Worktrunk 0.66.9 is below the minimum verified version 0.67.0
 0 warn, 1 fail
 ```
 
@@ -4664,16 +4664,16 @@ FAIL  Worktrunk version "banana" is not a parseable semantic version
 
 </details>
 
-#### Case: check passes the compatibility finding against the real v0.62.0 binary
+#### Case: check passes the compatibility finding against the real v0.67.0 binary
 
-Description: real Git, real Worktrunk v0.62.0, simulated Cursor. The built `wtw` runs `check` against the pinned real Worktrunk binary in isolated home/config state. `check` resolves the real `wt --version` output (`wt v0.62.0`), extracts the `0.62.0` triple, and PASSes the Worktrunk compatibility finding within the verified range `>=0.62.0 <0.63.0`; every category PASSes and the command exits 0. This backs the verified range with a passing real contract (spec AC-12.2). Run only under `bun run test:contract`; skipped when the pinned binary is absent.
+Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The built `wtw` runs `check` against the pinned real Worktrunk binary in isolated home/config state. `check` resolves the real `wt --version` output (`wt v0.67.0`), extracts the `0.67.0` triple, and PASSes the Worktrunk compatibility finding within the verified range `>=0.67.0 <0.68.0`; every category PASSes and the command exits 0. This backs the verified range with a passing real contract (spec AC-12.2). Run only under `bun run test:contract`; skipped when the pinned binary is absent.
 
 Covers: AC-1202
 
 <details>
 <summary>Evidence, input, command & output</summary>
 
-**Evidence** — dependency mode: external contract — built `wtw` artifact against the pinned real Worktrunk v0.62.0
+**Evidence** — dependency mode: external contract — built `wtw` artifact against the pinned real Worktrunk v0.67.0
 
 - Git: Real
 - Worktrunk: Real
@@ -4702,7 +4702,7 @@ _No exact stdout or stderr asserted._
 **Required stdout substrings**
 
 ```text
-PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
+PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0.
 16 pass, 0 warn, 0 fail
 ```
 
@@ -4712,7 +4712,7 @@ PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0.
 
 ### WTW-FR-0013 — Lifecycle integration
 
-The Worktrunk lifecycle carries `wtw` end to end. The blocking `pre-start` copy makes selected ignored data and both control files part of worktree readiness, so they exist before a successful create command returns. The background `post-start` `wtw sync --open` reconciles the workspace and opens Cursor on the exact absolute root-workspace path. Removal invoked from a linked worktree runs the background `post-remove` `wtw sync`, leaving the root workspace without the removed path. The real-lifecycle proofs (AC-13.1, AC-13.2) are established by the external-contract suite against a pinned real Worktrunk v0.62.0 binary; the repair proofs (AC-13.3) are fast cases that need no real binary, since a hook that never ran (a failed background hook, `--no-hooks`, or a raw `git worktree add`) is repaired by an explicit `wtw check`/`wtw sync`.
+The Worktrunk lifecycle carries `wtw` end to end. The blocking `pre-start` copy makes selected ignored data and both control files part of worktree readiness, so they exist before a successful create command returns. The background `post-start` `wtw sync --open` reconciles the workspace and opens Cursor on the exact absolute root-workspace path. Removal invoked from a linked worktree runs the background `post-remove` `wtw sync`, leaving the root workspace without the removed path. The real-lifecycle proofs (AC-13.1, AC-13.2) are established by the external-contract suite against a pinned real Worktrunk v0.67.0 binary; the repair proofs (AC-13.3) are fast cases that need no real binary, since a hook that never ran (a failed background hook, `--no-hooks`, or a raw `git worktree add`) is repaired by an explicit `wtw check`/`wtw sync`.
 
 | Criterion | Statement | Coverage |
 | --- | --- | --- |
@@ -4722,14 +4722,14 @@ The Worktrunk lifecycle carries `wtw` end to end. The blocking `pre-start` copy 
 
 #### Case: full real-Worktrunk lifecycle against the built wtw
 
-Description: real Git, real Worktrunk v0.62.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
+Description: real Git, real Worktrunk v0.67.0, simulated Cursor. The full lifecycle proven by the bespoke scenario test in `contract.test.ts` (run under `bun run test:contract`, skipped when the pinned binary is absent). In order: `wtw init` on a real repository; native Worktrunk first-use approval observed in isolated approval state, which `init` neither grants nor bypasses (the approval store stays empty and a non-`--yes` create refuses for approval); a real `wt switch --create` running the blocking `pre-start` copy so the selected ignored data and BOTH control files exist in the new worktree before the create returns (AC-13.1, AC-07.3), including when the new branch base is a linked-worktree branch whose ignored content diverges from the primary (the primary stays authoritative); the background `post-start` `wtw sync --open` reconciling the workspace, with the fake Cursor recording the exact absolute root-workspace path exactly once and never opening a GUI (AC-13.1); removal invoked from a LINKED worktree via real Worktrunk; and the background `post-remove` `wtw sync` leaving the root workspace without the removed path after the hook completes (AC-13.2). Ordered, background-hook-driven, and bounded-poll assertions cannot be expressed as one command run, so this scenario is verified by the scenario test rather than the generic runner; the first step's observable is `wtw init` reporting initialization.
 
 Covers: AC-1301, AC-1302
 
 <details>
 <summary>Evidence, input, command & output</summary>
 
-**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.62.0)
+**Evidence** — dependency mode: scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)
 
 - Git: Real
 - Worktrunk: Real

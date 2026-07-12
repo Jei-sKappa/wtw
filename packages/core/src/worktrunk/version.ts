@@ -6,8 +6,8 @@
 // the version and renders the finding.
 //
 // The rule is fixed by decision-log P20 and the spec's "Compatibility and safety
-// constraints" section: the verified range is `>=0.62.0 <0.63.0`. A version in
-// range passes; a lower or unparseable/absent version fails; `0.63.0` and newer
+// constraints" section: the verified range is `>=0.67.0 <0.68.0`. A version in
+// range passes; a lower or unparseable/absent version fails; `0.68.0` and newer
 // warn as unverified but are not blocked. A small pure comparator is used rather
 // than a semver dependency — the rule only needs two fixed boundary comparisons.
 
@@ -25,8 +25,8 @@ export interface VersionFinding {
 }
 
 /** The verified range boundaries (inclusive min, exclusive next). */
-const VERIFIED_MIN = "0.62.0";
-const VERIFIED_NEXT = "0.63.0";
+const VERIFIED_MIN = "0.67.0";
+const VERIFIED_NEXT = "0.68.0";
 
 type SemverTriple = readonly [number, number, number];
 
@@ -62,9 +62,9 @@ const NEXT_TRIPLE = parseVersion(VERIFIED_NEXT) as SemverTriple;
 /**
  * Evaluate a resolved Worktrunk version against the verified range.
  *
- * - `>=0.62.0` and `<0.63.0` → `pass`;
- * - below `0.62.0` → `fail`;
- * - `0.63.0` and newer → `warn` (unverified, not blocked);
+ * - `>=0.67.0` and `<0.68.0` → `pass`;
+ * - below `0.67.0` → `fail`;
+ * - `0.68.0` and newer → `warn` (unverified, not blocked);
  * - unparseable or `null` → `fail`.
  */
 export function evaluateWorktrunkVersion(
@@ -74,7 +74,7 @@ export function evaluateWorktrunkVersion(
     return {
       severity: "fail",
       message:
-        "Worktrunk version could not be determined; wtw requires a parseable version >=0.62.0 <0.63.0.",
+        "Worktrunk version could not be determined; wtw requires a parseable version >=0.67.0 <0.68.0.",
       version: null,
     };
   }
@@ -83,7 +83,7 @@ export function evaluateWorktrunkVersion(
   if (triple === null) {
     return {
       severity: "fail",
-      message: `Worktrunk version "${version}" is not a parseable semantic version; wtw requires >=0.62.0 <0.63.0.`,
+      message: `Worktrunk version "${version}" is not a parseable semantic version; wtw requires >=0.67.0 <0.68.0.`,
       version,
     };
   }
@@ -91,7 +91,7 @@ export function evaluateWorktrunkVersion(
   if (compareTriples(triple, MIN_TRIPLE) < 0) {
     return {
       severity: "fail",
-      message: `Worktrunk ${version} is below the minimum verified version ${VERIFIED_MIN}; wtw requires >=0.62.0 <0.63.0.`,
+      message: `Worktrunk ${version} is below the minimum verified version ${VERIFIED_MIN}; wtw requires >=0.67.0 <0.68.0.`,
       version,
     };
   }
@@ -99,14 +99,14 @@ export function evaluateWorktrunkVersion(
   if (compareTriples(triple, NEXT_TRIPLE) >= 0) {
     return {
       severity: "warn",
-      message: `Worktrunk ${version} is newer than the verified range (>=0.62.0 <0.63.0); treated as unverified but not blocked.`,
+      message: `Worktrunk ${version} is newer than the verified range (>=0.67.0 <0.68.0); treated as unverified but not blocked.`,
       version,
     };
   }
 
   return {
     severity: "pass",
-    message: `Worktrunk ${version} is within the verified range >=0.62.0 <0.63.0.`,
+    message: `Worktrunk ${version} is within the verified range >=0.67.0 <0.68.0.`,
     version,
   };
 }

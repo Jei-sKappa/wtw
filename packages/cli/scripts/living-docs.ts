@@ -106,7 +106,7 @@ function usesRealGit(setup: readonly SetupStep[]): boolean {
  *
  * - `contract`/`scenario` cases run under the external-contract suite
  *   (`contract-env.ts`), which ALWAYS injects real Git, the pinned real
- *   Worktrunk v0.62.0, and the fake Cursor — so every such case is real Git,
+ *   Worktrunk v0.67.0, and the fake Cursor — so every such case is real Git,
  *   real Worktrunk, simulated Cursor.
  * - `fast` cases are labelled per tool from their `env` fake-binary sentinels
  *   and `run:` steps. Worktrunk/Cursor are strict and binary-based: a faked
@@ -320,9 +320,9 @@ function trimOneTrailingNewline(value: string): string {
 const MODE_LABELS: Record<CaseMode, string> = {
   fast: "fast — real `wtw` entrypoint in an isolated temp environment",
   contract:
-    "external contract — built `wtw` artifact against the pinned real Worktrunk v0.62.0",
+    "external contract — built `wtw` artifact against the pinned real Worktrunk v0.67.0",
   scenario:
-    "scenario — bespoke ordered external-contract proof (real Worktrunk v0.62.0)",
+    "scenario — bespoke ordered external-contract proof (real Worktrunk v0.67.0)",
 };
 
 const EVIDENCE_LABELS: Record<ToolEvidence, string> = {
@@ -732,8 +732,8 @@ export function renderDocument(areas: Area[], cases: RenderCase[]): string {
     "a pure surface case, or a Worktrunk scenario modelled with raw Git so no",
     "`wt` binary runs). Simulated evidence is never real lifecycle proof:",
     "real-Worktrunk evidence comes only from the external-contract suite, so the",
-    "verified Worktrunk range `>=0.62.0 <0.63.0` is represented as supported",
-    "solely because that suite passes against the pinned real v0.62.0 binary",
+    "verified Worktrunk range `>=0.67.0 <0.68.0` is represented as supported",
+    "solely because that suite passes against the pinned real v0.67.0 binary",
     "(see `WTW-FR-0012`).",
   ];
 

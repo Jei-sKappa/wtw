@@ -68,7 +68,7 @@ installed via a symlink from `~/.local/bin/wtw` (see
 Behavior is specified in requirement manifests
 (`packages/cli/requirements/functional/*.yml`) mapped to E2E cases
 (`packages/cli/test/e2e/cases/*/case.yml`) with modes `fast` (fake wt/cursor
-shims), `contract` (real pinned Worktrunk v0.62.0 + built bundle), and
+shims), `contract` (real pinned Worktrunk v0.67.0 + built bundle), and
 `scenario` (imperative lifecycle proof in `contract.test.ts`). Traceability is
 enforced: every active FR-02..FR-13 criterion needs a covering case.
 `packages/cli/docs/BEHAVIOR.md` is GENERATED (`bun run docs:living`) — never
@@ -80,7 +80,7 @@ Key scripts (root): `format`, `check` (biome), `typecheck`, `test`,
 All must pass before committing.
 
 macOS is the verified platform (Linux best-effort, Windows unsupported).
-Verified Worktrunk range: `>=0.62.0 <0.63.0`.
+Verified Worktrunk range: `>=0.67.0 <0.68.0`.
 
 Workflow docs (spec, plans, decision logs) live under `docs/threads/`; the
 authoritative spec is `docs/threads/260711114414Z-wtw-genesis/specs/001/spec.md`.

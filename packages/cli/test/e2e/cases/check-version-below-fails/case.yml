@@ -1,10 +1,10 @@
 id: check-version-below-fails
 covers:
   - WTW-FR-0012.AC-1201
-title: check fails the compatibility finding for a version below 0.62.0
+title: check fails the compatibility finding for a version below 0.67.0
 description: >
-  real Git, simulated Worktrunk (reports 0.61.9). A version below the inclusive
-  minimum `0.62.0` fails the compatibility finding, so the Worktrunk category
+  real Git, simulated Worktrunk (reports 0.66.9). A version below the inclusive
+  minimum `0.67.0` fails the compatibility finding, so the Worktrunk category
   FAILs and the command exits 1.
 cwd: repo
 env:
@@ -17,7 +17,7 @@ env:
   WTW_NODE_BIN: __FAKE_GIT_BIN__
   WTW_WTW_BIN: __FAKE_GIT_BIN__
   WTW_PLATFORM: darwin
-  FAKE_WT_VERSION: "0.61.9"
+  FAKE_WT_VERSION: "0.66.9"
 setup:
   - run: { cmd: ["git", "init", "-b", "main", "."] }
   - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
@@ -26,6 +26,6 @@ command: ["check"]
 expect:
   exitCode: 1
   stdoutContains:
-    - "FAIL  Worktrunk 0.61.9 is below the minimum verified version 0.62.0"
+    - "FAIL  Worktrunk 0.66.9 is below the minimum verified version 0.67.0"
     - "0 warn, 1 fail"
   stderr: ""

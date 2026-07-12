@@ -10,7 +10,7 @@
     linked worktree runs the background `post-remove` `wtw sync`, leaving the
     root workspace without the removed path. The real-lifecycle proofs
     (AC-13.1, AC-13.2) are established by the external-contract suite against a
-    pinned real Worktrunk v0.62.0 binary; the repair proofs (AC-13.3) are fast
+    pinned real Worktrunk v0.67.0 binary; the repair proofs (AC-13.3) are fast
     cases that need no real binary, since a hook that never ran (a failed
     background hook, `--no-hooks`, or a raw `git worktree add`) is repaired by an
     explicit `wtw check`/`wtw sync`.

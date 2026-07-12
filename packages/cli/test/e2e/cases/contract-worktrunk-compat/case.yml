@@ -1,13 +1,13 @@
 id: contract-worktrunk-compat
 covers:
   - WTW-FR-0012.AC-1202
-title: check passes the compatibility finding against the real v0.62.0 binary
+title: check passes the compatibility finding against the real v0.67.0 binary
 description: >
-  real Git, real Worktrunk v0.62.0, simulated Cursor. The built `wtw` runs
+  real Git, real Worktrunk v0.67.0, simulated Cursor. The built `wtw` runs
   `check` against the pinned real Worktrunk binary in isolated home/config state.
-  `check` resolves the real `wt --version` output (`wt v0.62.0`), extracts the
-  `0.62.0` triple, and PASSes the Worktrunk compatibility finding within the
-  verified range `>=0.62.0 <0.63.0`; every category PASSes and the command exits
+  `check` resolves the real `wt --version` output (`wt v0.67.0`), extracts the
+  `0.67.0` triple, and PASSes the Worktrunk compatibility finding within the
+  verified range `>=0.67.0 <0.68.0`; every category PASSes and the command exits
   0. This backs the verified range with a passing real contract (spec AC-12.2).
   Run only under `bun run test:contract`; skipped when the pinned binary is
   absent.
@@ -26,6 +26,6 @@ command: ["check"]
 expect:
   exitCode: 0
   stdoutContains:
-    - "PASS  Worktrunk 0.62.0 is within the verified range >=0.62.0 <0.63.0."
+    - "PASS  Worktrunk 0.67.0 is within the verified range >=0.67.0 <0.68.0."
     - "16 pass, 0 warn, 0 fail"
   stderr: ""

@@ -1,9 +1,9 @@
-id: check-version-0630-warns
+id: check-version-0680-warns
 covers:
   - WTW-FR-0012.AC-1201
-title: check warns (does not fail) for Worktrunk 0.63.0 and newer
+title: check warns (does not fail) for Worktrunk 0.68.0 and newer
 description: >
-  real Git, simulated Worktrunk (reports 0.63.0). `0.63.0` is the exclusive
+  real Git, simulated Worktrunk (reports 0.68.0). `0.68.0` is the exclusive
   upper bound of the verified range, so it is treated as unverified: the
   Worktrunk category WARNs but does not fail, and the command exits 0.
 cwd: repo
@@ -17,7 +17,7 @@ env:
   WTW_NODE_BIN: __FAKE_GIT_BIN__
   WTW_WTW_BIN: __FAKE_GIT_BIN__
   WTW_PLATFORM: darwin
-  FAKE_WT_VERSION: "0.63.0"
+  FAKE_WT_VERSION: "0.68.0"
 setup:
   - run: { cmd: ["git", "init", "-b", "main", "."] }
   - run: { cmd: ["git", "commit", "--allow-empty", "-m", "init"] }
@@ -26,6 +26,6 @@ command: ["check"]
 expect:
   exitCode: 0
   stdoutContains:
-    - "WARN  Worktrunk 0.63.0 is newer than the verified range"
+    - "WARN  Worktrunk 0.68.0 is newer than the verified range"
     - "1 warn, 0 fail"
   stderr: ""
