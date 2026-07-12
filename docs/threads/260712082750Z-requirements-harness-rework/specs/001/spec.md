@@ -1,7 +1,7 @@
 ---
-version: 2
+version: 3
 status:
-  approved: 260712111323Z
+  approved: 260712115028Z
 ---
 
 # Spec — Requirements/E2E harness rework: 1:1 acceptance mapping and manifest convention
@@ -56,12 +56,21 @@ by this shape. Five decisions settling the rework were recorded in
   rule and ID style) and `packages/cli/docs/RELEASE-CHECKLIST.md` (its steps
   become the reference targets of `manual` ACs, and its existing genesis-ID
   references are rewritten).
+- The Worktrunk version bump (P6): the verified-range constants and their
+  message strings in `packages/core/src/worktrunk/version.ts` and the
+  comment-only version example in `packages/cli/src/diagnostics/categories.ts`
+  (the only two permitted product-tree touches); the contract pin in
+  `packages/cli/test/e2e/harness/contract-env.ts` and the fake shim's default
+  version; the version-boundary cases, their expected outputs, and the core
+  version unit tests; the version mentions in `AGENTS.md`.
 
 **Out of scope:**
 
-- Any change to wtw's product behavior. Files under `packages/cli/src/` and
-  `packages/core/src/` are not modified. If the rework surfaces what looks
-  like a product bug, stop and escalate to the owner; do not fix it inline.
+- Any change to wtw's product behavior beyond the P6 version-range bump.
+  Files under `packages/cli/src/` and `packages/core/src/` are not modified
+  except the two P6 carve-out files named in scope above. If the rework
+  surfaces what looks like a product bug, stop and escalate to the owner; do
+  not fix it inline.
 - The jastr repository. It is inspiration, not authority; nothing in this
   spec references it as a dependency, and it must not be required to be
   present (`.library/sources/` is gitignored). (P5)
@@ -242,15 +251,21 @@ no behavior guarantee is lost:
   IDs rejected, deterministic loading order. New fields (`verifiedBy`,
   checkpoint declarations, evidence references) are added to the strict
   set, not exempted from it.
-- **Contract pinning.** The contract suite keeps using the pinned real
-  Worktrunk v0.62.0 and the built bundle; the verified range
-  `>=0.62.0 <0.63.0` semantics are unchanged.
+- **Contract pinning.** The contract suite keeps using a pinned real
+  Worktrunk and the built bundle. As part of this rework the pin moves from
+  v0.62.0 to v0.67.0 and the verified range from `>=0.62.0 <0.63.0` to
+  `>=0.67.0 <0.68.0` (P6); the pin/range semantics (exact-version contract
+  pin; min-inclusive, next-minor-exclusive verified range; below-range
+  fails, above-range warns as unverified) are unchanged.
 - **Generated file discipline.** `BEHAVIOR.md` is never hand-edited;
   `docs:living:check` must fail on drift, as today.
 - **Frozen records.** The genesis thread's artifacts are not edited (P4).
   The jastr tree is not read as a build input and not modified (P5).
 - **No product changes.** `packages/cli/src/` and `packages/core/src/` are
-  untouched (see Scope).
+  untouched (see Scope), with exactly the P6 carve-out: the verified-range
+  constants/messages in `packages/core/src/worktrunk/version.ts` and the
+  comment-only version example in
+  `packages/cli/src/diagnostics/categories.ts`.
 
 ## Acceptance criteria
 
@@ -366,9 +381,13 @@ and AC-8.1).
 ### FR-7 — Gate green, product untouched
 
 - **AC-7.1:** `bun run test-and-report` passes end-to-end on the completed
-  rework.
+  rework, with the contract suite executing (not skipped) against the pinned
+  Worktrunk v0.67.0.
 - **AC-7.2:** `git diff` for the rework shows no modifications under
-  `packages/cli/src/` or `packages/core/src/`.
+  `packages/cli/src/` or `packages/core/src/` except the P6 carve-out:
+  `packages/core/src/worktrunk/version.ts` (verified-range
+  constants/messages) and `packages/cli/src/diagnostics/categories.ts`
+  (comment only).
 
 ### FR-8 — Model documentation updated
 
@@ -377,10 +396,24 @@ and AC-8.1).
   verification-model description accurately reflects the new convention
   (review-verified), per its own update rule.
 
+### FR-9 — Worktrunk pin updated (P6)
+
+- **AC-9.1:** The contract suite is pinned to real Worktrunk v0.67.0 and
+  `packages/core` evaluates versions against `>=0.67.0 <0.68.0` with
+  unchanged semantics (in-range passes, below-range fails, `0.68.0` and
+  newer warns) — proven by the updated core version unit tests and the
+  version-boundary E2E cases, and by the contract suite executing per
+  AC-7.1.
+- **AC-9.2:** No occurrence of the version strings `0.62.` or `0.63.`
+  remains under `packages/cli/src/`, `packages/core/src/`,
+  `packages/*/test/`, `packages/cli/requirements/`, `packages/cli/docs/`,
+  or in `AGENTS.md` — checkable by grep.
+
 **Coverage note:** every expected-behavior clause in sections 1–6 above is
 enforced by at least one AC here: section 1 → FR-1; section 2 → FR-2;
 section 3 → FR-3; section 4 → FR-4; section 5 → FR-5; section 6 → FR-6 and
-AC-6.2; the constraints → FR-7 and FR-8.
+AC-6.2; the constraints → FR-7 and FR-8, and the contract-pinning
+constraint's P6 bump → FR-9.
 
 ## Degrees of freedom
 
