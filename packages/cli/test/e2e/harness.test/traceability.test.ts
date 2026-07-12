@@ -12,8 +12,12 @@ const baseRequirement: Requirement = {
   status: "active",
   description: "Defines the CLI surface.",
   acceptance: [
-    { id: "AC-0201", statement: "Help exits 0." },
-    { id: "AC-0202", statement: "Excluded commands exit 1." },
+    { id: "AC-0201", statement: "Help exits 0.", verifiedBy: "case" },
+    {
+      id: "AC-0202",
+      statement: "Excluded commands exit 1.",
+      verifiedBy: "case",
+    },
   ],
 };
 
@@ -61,13 +65,13 @@ describe("validateTraceability", () => {
     ).toThrow(/covers missing acceptance criterion WTW-FR-0002.AC-9999/);
   });
 
-  it("rejects removed requirement and removed acceptance references", () => {
+  it("rejects retired requirement and retired acceptance references", () => {
     expect(() =>
       validateTraceability(
-        [{ ...baseRequirement, status: "removed", removedReason: "Retired." }],
+        [{ ...baseRequirement, status: "retired", retiredReason: "Retired." }],
         cases,
       ),
-    ).toThrow(/covers removed requirement WTW-FR-0002/);
+    ).toThrow(/covers retired requirement WTW-FR-0002/);
 
     expect(() =>
       validateTraceability(
@@ -78,16 +82,21 @@ describe("validateTraceability", () => {
               {
                 id: "AC-0201",
                 statement: "Old.",
-                status: "removed",
-                removedReason: "Retired.",
+                verifiedBy: "case",
+                status: "retired",
+                retiredReason: "Retired.",
               },
-              { id: "AC-0202", statement: "Excluded commands exit 1." },
+              {
+                id: "AC-0202",
+                statement: "Excluded commands exit 1.",
+                verifiedBy: "case",
+              },
             ],
           },
         ],
         cases,
       ),
-    ).toThrow(/covers removed acceptance criterion WTW-FR-0002.AC-0201/);
+    ).toThrow(/covers retired acceptance criterion WTW-FR-0002.AC-0201/);
   });
 });
 

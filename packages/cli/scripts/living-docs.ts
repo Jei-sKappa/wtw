@@ -580,9 +580,9 @@ function requirementHeading(requirement: Requirement): string {
   return `${requirement.id} — ${requirement.title}${requirementBadge(requirement)}`;
 }
 
-/** Active, non-removed criteria — the ones the contract still asserts. */
+/** Active, non-retired criteria — the ones the contract still asserts. */
 function liveAcceptance(requirement: Requirement) {
-  return requirement.acceptance.filter((ac) => ac.status !== "removed");
+  return requirement.acceptance.filter((ac) => ac.status !== "retired");
 }
 
 function renderAcceptanceTable(
@@ -697,7 +697,7 @@ export function renderDocument(areas: Area[], cases: RenderCase[]): string {
   const visibleAreas = areas
     .map((area) => ({
       ...area,
-      requirements: area.requirements.filter((r) => r.status !== "removed"),
+      requirements: area.requirements.filter((r) => r.status !== "retired"),
     }))
     .filter((area) => area.requirements.length > 0);
 

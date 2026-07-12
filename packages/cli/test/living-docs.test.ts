@@ -50,7 +50,9 @@ function activeArea(): Area {
         title: "Demo renders",
         status: "active",
         description: "The demo renders output.",
-        acceptance: [{ id: "AC-0001", statement: "It renders." }],
+        acceptance: [
+          { id: "AC-0001", statement: "It renders.", verifiedBy: "case" },
+        ],
       },
     ],
   };
@@ -204,7 +206,13 @@ describe("renderDocument", () => {
               title: "Deferred behavior",
               status: "deferred",
               description: "Planned but not yet built.",
-              acceptance: [{ id: "AC-0001", statement: "It will render." }],
+              acceptance: [
+                {
+                  id: "AC-0001",
+                  statement: "It will render.",
+                  verifiedBy: "case",
+                },
+              ],
               coverage: "Tracked for a later milestone.",
             },
           ],
@@ -217,7 +225,7 @@ describe("renderDocument", () => {
     expect(doc).toContain("> Deferred: Tracked for a later milestone.");
   });
 
-  it("omits removed requirements and removed criteria entirely", () => {
+  it("omits retired requirements and retired criteria entirely", () => {
     const doc = renderDocument(
       [
         {
@@ -225,24 +233,31 @@ describe("renderDocument", () => {
           requirements: [
             {
               id: "WTW-FR-0003",
-              title: "Removed behavior",
-              status: "removed",
+              title: "Retired behavior",
+              status: "retired",
               description: "Gone.",
-              acceptance: [{ id: "AC-0001", statement: "Obsolete." }],
-              removedReason: "Superseded.",
+              acceptance: [
+                { id: "AC-0001", statement: "Obsolete.", verifiedBy: "case" },
+              ],
+              retiredReason: "Superseded.",
             },
             {
               id: "WTW-FR-0004",
               title: "Partly trimmed",
               status: "active",
-              description: "Has a removed criterion.",
+              description: "Has a retired criterion.",
               acceptance: [
-                { id: "AC-0001", statement: "Still asserted." },
+                {
+                  id: "AC-0001",
+                  statement: "Still asserted.",
+                  verifiedBy: "case",
+                },
                 {
                   id: "AC-0002",
                   statement: "No longer asserted.",
-                  status: "removed",
-                  removedReason: "Dropped.",
+                  verifiedBy: "case",
+                  status: "retired",
+                  retiredReason: "Dropped.",
                 },
               ],
             },
@@ -253,7 +268,7 @@ describe("renderDocument", () => {
     );
 
     expect(doc).not.toContain("WTW-FR-0003");
-    expect(doc).not.toContain("Removed behavior");
+    expect(doc).not.toContain("Retired behavior");
     expect(doc).toContain("| AC-0001 | Still asserted. |");
     expect(doc).not.toContain("No longer asserted.");
   });

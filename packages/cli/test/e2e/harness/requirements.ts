@@ -2,16 +2,24 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 
-// Requirement ids are `<AREA>-FR-<NNNN>`; for wtw the area is always `WTW`, so a
-// spec `FR-NN` maps to manifest id `WTW-FR-00NN` (each segment zero-padded to
-// four digits). Acceptance ids are `AC-<NNNN>`; spec `AC-NN.M` maps to `AC-NNMM`
-// (each dotted segment zero-padded to two digits). The composite acceptance
-// reference used by cases is `<requirement-id>.<acceptance-id>`, e.g. spec
-// `AC-02.1` is manifest `AC-0201` with covers ref `WTW-FR-0002.AC-0201`.
+// Manifest convention (see specs/001/spec.md §1–2). Requirement ids are
+// `<DOMAIN>-FR-<NNNN>`: an uppercase-alphabetic domain prefix and a four-digit
+// number scoped to that prefix. The prefix↔file binding is an invariant —
+// every FR in one manifest file carries that file's single prefix, and no two
+// files share a prefix (enforced in `loadRequirements`). Acceptance ids are
+// `AC-<NNNN>`, numbered locally per FR; a bare AC id has no meaning outside its
+// FR, so every cross-reference uses the compound form `<FR-ID>.<AC-ID>`. Each
+// AC declares one `verifiedBy` kind (`case | checkpoint | unit | manual`) with
+// its evidence reference. Withdrawn FRs/ACs stay as `status: retired`
+// tombstones with a mandatory `retiredReason`; ids are never reused.
 const REQUIREMENT_ID_PATTERN = /^[A-Z]+-FR-\d{4}$/;
 const ACCEPTANCE_ID_PATTERN = /^AC-\d{4}$/;
-const REQUIREMENT_STATUSES = new Set(["active", "deferred", "removed"]);
-const ACCEPTANCE_STATUSES = new Set(["removed"]);
+const MANUAL_STEP_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const BANNED_STATEMENT_SUBSTRINGS = ["FR-", "AC-", "(spec"];
+const NOTES_TASK_PATTERN = /Task \d/;
+const REQUIREMENT_STATUSES = new Set(["active", "deferred", "retired"]);
+const VERIFIED_BY_KINDS = new Set(["case", "checkpoint", "unit", "manual"]);
+const CASE_MODES = new Set(["contract"]);
 const REQUIREMENT_FIELDS = new Set([
   "id",
   "title",
@@ -20,33 +28,43 @@ const REQUIREMENT_FIELDS = new Set([
   "acceptance",
   "notes",
   "replacedBy",
-  "removedReason",
+  "retiredReason",
   "coverage",
+  "caseMode",
 ]);
 const ACCEPTANCE_FIELDS = new Set([
   "id",
   "statement",
+  "verifiedBy",
+  "unitTest",
+  "manualStep",
   "status",
-  "removedReason",
+  "retiredReason",
 ]);
+
+export type VerifiedBy = "case" | "checkpoint" | "unit" | "manual";
 
 export type AcceptanceCriterion = {
   id: string;
   statement: string;
-  status?: "removed";
-  removedReason?: string;
+  verifiedBy: VerifiedBy;
+  unitTest?: string;
+  manualStep?: string;
+  status?: "retired";
+  retiredReason?: string;
 };
 
 export type Requirement = {
   id: string;
   title: string;
-  status: "active" | "deferred" | "removed";
+  status: "active" | "deferred" | "retired";
   description: string;
   acceptance: AcceptanceCriterion[];
   notes?: string;
   replacedBy?: string;
-  removedReason?: string;
+  retiredReason?: string;
   coverage?: string;
+  caseMode?: "contract";
 };
 
 export type RawRequirement = Requirement;
@@ -98,6 +116,25 @@ function optionalString(
   return value;
 }
 
+/** `validateSafePath` semantics: a non-empty, relative, forward-slash path with
+ * no `..` segments. */
+function requireSafePath(value: string, field: string, source: Source): string {
+  if (value.includes("\\")) {
+    fail(source, `${field} must use forward slashes: ${value}`);
+  }
+  if (path.posix.isAbsolute(value)) {
+    fail(source, `${field} must not be absolute: ${value}`);
+  }
+  if (value.split("/").some((segment) => segment === "..")) {
+    fail(source, `${field} must not contain .. path segments: ${value}`);
+  }
+  return value;
+}
+
+function domainPrefix(requirementId: string): string {
+  return requirementId.split("-FR-")[0] as string;
+}
+
 function validateAcceptance(
   value: unknown,
   requirementId: string,
@@ -121,33 +158,94 @@ function validateAcceptance(
     `${requirementId}.${id}.statement`,
     source,
   );
+  for (const banned of BANNED_STATEMENT_SUBSTRINGS) {
+    if (statement.includes(banned)) {
+      fail(
+        source,
+        `${requirementId}.${id} statement must not contain the substring ${banned}`,
+      );
+    }
+  }
+
+  const verifiedBy = requireString(
+    value.verifiedBy,
+    `${requirementId}.${id}.verifiedBy`,
+    source,
+  );
+  if (!VERIFIED_BY_KINDS.has(verifiedBy)) {
+    fail(source, `invalid verifiedBy ${requirementId}.${id}: ${verifiedBy}`);
+  }
+
+  const unitTest = optionalString(
+    value.unitTest,
+    `${requirementId}.${id}.unitTest`,
+    source,
+  );
+  if (unitTest !== undefined) {
+    requireSafePath(unitTest, `${requirementId}.${id}.unitTest`, source);
+  }
+  if (verifiedBy === "unit" && unitTest === undefined) {
+    fail(source, `${requirementId}.${id} verifiedBy unit requires unitTest.`);
+  }
+  if (verifiedBy !== "unit" && unitTest !== undefined) {
+    fail(
+      source,
+      `${requirementId}.${id} unitTest is only allowed when verifiedBy is unit.`,
+    );
+  }
+
+  const manualStep = optionalString(
+    value.manualStep,
+    `${requirementId}.${id}.manualStep`,
+    source,
+  );
+  if (manualStep !== undefined && !MANUAL_STEP_PATTERN.test(manualStep)) {
+    fail(source, `invalid manualStep ${requirementId}.${id}: ${manualStep}`);
+  }
+  if (verifiedBy === "manual" && manualStep === undefined) {
+    fail(
+      source,
+      `${requirementId}.${id} verifiedBy manual requires manualStep.`,
+    );
+  }
+  if (verifiedBy !== "manual" && manualStep !== undefined) {
+    fail(
+      source,
+      `${requirementId}.${id} manualStep is only allowed when verifiedBy is manual.`,
+    );
+  }
+
   const status = optionalString(
     value.status,
     `${requirementId}.${id}.status`,
     source,
   );
-  if (status !== undefined && !ACCEPTANCE_STATUSES.has(status)) {
+  if (status !== undefined && status !== "retired") {
     fail(
       source,
       `invalid acceptance criterion status ${requirementId}.${id}: ${status}`,
     );
   }
-  const removedReason = optionalString(
-    value.removedReason,
-    `${requirementId}.${id}.removedReason`,
+  const retiredReason = optionalString(
+    value.retiredReason,
+    `${requirementId}.${id}.retiredReason`,
     source,
   );
-  if (status === "removed" && removedReason === undefined) {
+  if (status === "retired" && retiredReason === undefined) {
     fail(
       source,
-      `${requirementId}.${id} removed acceptance criterion requires removedReason.`,
+      `${requirementId}.${id} retired acceptance criterion requires retiredReason.`,
     );
   }
+
   return {
     id,
     statement,
-    ...(status === undefined ? {} : { status: status as "removed" }),
-    ...(removedReason === undefined ? {} : { removedReason }),
+    verifiedBy: verifiedBy as VerifiedBy,
+    ...(unitTest === undefined ? {} : { unitTest }),
+    ...(manualStep === undefined ? {} : { manualStep }),
+    ...(status === undefined ? {} : { status: status as "retired" }),
+    ...(retiredReason === undefined ? {} : { retiredReason }),
   };
 }
 
@@ -193,25 +291,32 @@ export function validateRequirements(
       return criterion;
     });
 
-    const removedReason = optionalString(
-      raw.removedReason,
-      `${id}.removedReason`,
+    const retiredReason = optionalString(
+      raw.retiredReason,
+      `${id}.retiredReason`,
       source,
     );
     const coverage = optionalString(raw.coverage, `${id}.coverage`, source);
-    if (status === "removed" && removedReason === undefined) {
-      fail(source, `${id} removed requirement requires removedReason.`);
+    if (status === "retired" && retiredReason === undefined) {
+      fail(source, `${id} retired requirement requires retiredReason.`);
     }
     if (status === "deferred" && coverage === undefined) {
       fail(source, `${id} deferred requirement requires coverage.`);
     }
 
     const notes = optionalString(raw.notes, `${id}.notes`, source);
+    if (notes !== undefined && NOTES_TASK_PATTERN.test(notes)) {
+      fail(source, `${id}.notes must not carry task references: ${notes}`);
+    }
     const replacedBy = optionalString(
       raw.replacedBy,
       `${id}.replacedBy`,
       source,
     );
+    const caseMode = optionalString(raw.caseMode, `${id}.caseMode`, source);
+    if (caseMode !== undefined && !CASE_MODES.has(caseMode)) {
+      fail(source, `invalid caseMode ${id}: ${caseMode}`);
+    }
 
     return {
       id,
@@ -221,8 +326,9 @@ export function validateRequirements(
       acceptance,
       ...(notes === undefined ? {} : { notes }),
       ...(replacedBy === undefined ? {} : { replacedBy }),
-      ...(removedReason === undefined ? {} : { removedReason }),
+      ...(retiredReason === undefined ? {} : { retiredReason }),
       ...(coverage === undefined ? {} : { coverage }),
+      ...(caseMode === undefined ? {} : { caseMode: caseMode as "contract" }),
     };
   });
 }
@@ -239,6 +345,31 @@ function rejectDuplicateRequirementIds(
       );
     }
     seen.set(requirement.id, filePath);
+  }
+}
+
+/** Bind one domain prefix to each manifest file: every FR in a file shares that
+ * file's single prefix, and no two files share a prefix. */
+function rejectPrefixViolations(requirements: LoadedRequirement[]): void {
+  const prefixByFile = new Map<string, string>();
+  const fileByPrefix = new Map<string, string>();
+  for (const { requirement, filePath } of requirements) {
+    const prefix = domainPrefix(requirement.id);
+    const filePrefix = prefixByFile.get(filePath);
+    if (filePrefix === undefined) {
+      prefixByFile.set(filePath, prefix);
+    } else if (filePrefix !== prefix) {
+      throw new Error(
+        `${filePath}: file mixes domain prefixes ${filePrefix} and ${prefix}`,
+      );
+    }
+    const prefixFile = fileByPrefix.get(prefix);
+    if (prefixFile !== undefined && prefixFile !== filePath) {
+      throw new Error(
+        `${filePath}: domain prefix ${prefix} already used by ${prefixFile}`,
+      );
+    }
+    fileByPrefix.set(prefix, filePath);
   }
 }
 
@@ -261,6 +392,7 @@ export async function loadRequirements(root: string): Promise<Requirement[]> {
   }
 
   rejectDuplicateRequirementIds(loaded);
+  rejectPrefixViolations(loaded);
   return loaded.map((entry) => entry.requirement);
 }
 

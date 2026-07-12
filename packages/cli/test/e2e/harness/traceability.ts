@@ -14,8 +14,8 @@ function splitRef(ref: string): {
 
 /**
  * Cross-check requirement/case traceability: every case `covers` ref resolves to
- * a declared, non-removed acceptance criterion of a non-removed requirement, and
- * every active requirement's non-removed acceptance criterion is covered by at
+ * a declared, non-retired acceptance criterion of a non-retired requirement, and
+ * every active requirement's non-retired acceptance criterion is covered by at
  * least one case. This single function is the sole traceability authority — the
  * E2E suite and the living-doc generator both call it, so the gate and the
  * document can never disagree.
@@ -27,14 +27,14 @@ export function validateTraceability(
   const requirementsById = new Map(requirements.map((item) => [item.id, item]));
   const acceptanceByRef = new Map<
     string,
-    { requirement: Requirement; removed: boolean }
+    { requirement: Requirement; retired: boolean }
   >();
 
   for (const requirement of requirements) {
     for (const ac of requirement.acceptance) {
       acceptanceByRef.set(acceptanceRef(requirement.id, ac.id), {
         requirement,
-        removed: ac.status === "removed",
+        retired: ac.status === "retired",
       });
     }
   }
@@ -49,9 +49,9 @@ export function validateTraceability(
           `${testCase.id}: covers missing requirement ${requirementId}`,
         );
       }
-      if (requirement.status === "removed") {
+      if (requirement.status === "retired") {
         throw new Error(
-          `${testCase.id}: covers removed requirement ${requirementId}`,
+          `${testCase.id}: covers retired requirement ${requirementId}`,
         );
       }
       const acceptance = acceptanceByRef.get(ref);
@@ -60,9 +60,9 @@ export function validateTraceability(
           `${testCase.id}: covers missing acceptance criterion ${ref}`,
         );
       }
-      if (acceptance.removed) {
+      if (acceptance.retired) {
         throw new Error(
-          `${testCase.id}: covers removed acceptance criterion ${ref}`,
+          `${testCase.id}: covers retired acceptance criterion ${ref}`,
         );
       }
       if (acceptanceId.length === 0) {
@@ -77,7 +77,7 @@ export function validateTraceability(
   for (const requirement of requirements) {
     if (requirement.status !== "active") continue;
     for (const ac of requirement.acceptance) {
-      if (ac.status === "removed") continue;
+      if (ac.status === "retired") continue;
       const ref = acceptanceRef(requirement.id, ac.id);
       if (!covered.has(ref)) {
         throw new Error(`uncovered acceptance criterion ${ref}`);
