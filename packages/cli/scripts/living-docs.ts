@@ -5,16 +5,21 @@ import YAML from "yaml";
 import {
   type CaseManifest,
   type CaseMode,
+  type Checkpoint,
   loadCases,
   type SetupStep,
 } from "../test/e2e/harness/case-manifest";
 import {
+  type AcceptanceCriterion,
   acceptanceRef,
   type Requirement,
   validateRequirements,
 } from "../test/e2e/harness/requirements";
 
 export const OUTPUT_PATH = "docs/BEHAVIOR.md";
+
+/** Where `manual`-kind acceptance criteria point the reader for their proof. */
+const RELEASE_CHECKLIST_PATH = "packages/cli/docs/RELEASE-CHECKLIST.md";
 
 export type Area = {
   title: string;
@@ -64,7 +69,13 @@ export type RenderCase = {
   evidence: CaseEvidence;
   cwd: string;
   command: string[];
-  covers: string[];
+  /** The single acceptance-criterion ref a declarative (`fast`/`contract`) case
+   * covers; `undefined` on scenario cases, which declare per-checkpoint
+   * coverage instead. */
+  covers: string | undefined;
+  /** The named checkpoints a `scenario` case declares (each covering exactly one
+   * `verifiedBy: checkpoint` AC); empty for declarative cases. */
+  checkpoints: Checkpoint[];
   /** Human-readable one-line descriptions of the case's `setup` pre-steps (a
    * prior `wtw` invocation, a fixture copy, or a program run), in order. Empty
    * for cases with no `setup`. Surfaced so a stateful case does not look like
@@ -284,9 +295,8 @@ export async function loadRenderCases(root: string): Promise<RenderCase[]> {
       evidence: caseEvidence(manifest),
       cwd: manifest.cwd,
       command: manifest.command,
-      // Scalar `covers` lifted into the render list; scenario checkpoints are
-      // wired into the renderer by the Task 6 rework.
-      covers: manifest.covers === undefined ? [] : [manifest.covers],
+      covers: manifest.covers,
+      checkpoints: manifest.checkpoints ?? [],
       setupSteps: manifest.setup.map(describeSetupStep),
       exitCode: manifest.expect.exitCode,
       stdout: await readStream(
@@ -587,129 +597,224 @@ function liveAcceptance(requirement: Requirement) {
   return requirement.acceptance.filter((ac) => ac.status !== "retired");
 }
 
-function renderAcceptanceTable(
-  requirement: Requirement,
-  byRef: Map<string, RenderCase[]>,
-): string {
-  const rows = liveAcceptance(requirement).map((ac) => {
-    const cases = byRef.get(acceptanceRef(requirement.id, ac.id)) ?? [];
-    const coverage =
-      cases.length === 0
-        ? "❌ uncovered"
-        : `✅ ${cases.map((c) => `\`${c.id}\``).join(", ")}`;
-    return `| ${ac.id} | ${ac.statement.trim()} | ${coverage} |`;
-  });
+/** Human label for an acceptance criterion's proof kind. */
+const VERIFIED_BY_LABELS = {
+  case: "a dedicated end-to-end case",
+  checkpoint: "a named scenario checkpoint",
+  unit: "a named unit-test file",
+  manual: "a named manual checklist step",
+} as const;
+
+/** One resolved checkpoint: the checkpoint declaration plus its owning scenario
+ * case, so the renderer can show the scenario identity alongside the step. */
+type ResolvedCheckpoint = {
+  scenarioCase: RenderCase;
+  checkpoint: Checkpoint;
+};
+
+/**
+ * The per-AC evidence indexes: the single covering case for each
+ * `verifiedBy: case` ref, and the single covering checkpoint for each
+ * `verifiedBy: checkpoint` ref. Both maps are single-valued *by construction*:
+ * a second body for the same ref throws rather than being silently dropped, so
+ * the renderer structurally enforces that no acceptance criterion carries more
+ * than one rendered evidence body (spec §5).
+ */
+type EvidenceIndex = {
+  caseByRef: Map<string, RenderCase>;
+  checkpointByRef: Map<string, ResolvedCheckpoint>;
+};
+
+function buildEvidenceIndex(cases: RenderCase[]): EvidenceIndex {
+  const caseByRef = new Map<string, RenderCase>();
+  const checkpointByRef = new Map<string, ResolvedCheckpoint>();
+  for (const entry of cases) {
+    if (entry.covers !== undefined) {
+      if (caseByRef.has(entry.covers)) {
+        throw new Error(
+          `acceptance criterion ${entry.covers} is covered by more than one case: ${caseByRef.get(entry.covers)?.id}, ${entry.id}`,
+        );
+      }
+      caseByRef.set(entry.covers, entry);
+    }
+    for (const checkpoint of entry.checkpoints) {
+      if (checkpointByRef.has(checkpoint.covers)) {
+        throw new Error(
+          `acceptance criterion ${checkpoint.covers} is covered by more than one checkpoint: ${checkpointByRef.get(checkpoint.covers)?.checkpoint.id}, ${checkpoint.id}`,
+        );
+      }
+      checkpointByRef.set(checkpoint.covers, {
+        scenarioCase: entry,
+        checkpoint,
+      });
+    }
+  }
+  return { caseByRef, checkpointByRef };
+}
+
+/** A declarative case's evidence: its identity plus the collapsible carrying
+ * dependency-mode labels, input, command, and output — placed under its one AC
+ * only. */
+function renderCaseEvidence(entry: RenderCase): string {
+  const sections = [
+    renderEvidenceSection(entry),
+    renderInputSection(entry),
+    renderCommandSection(entry),
+    renderOutputSection(entry),
+    renderCliOutputSection(entry),
+  ].filter((section): section is string => section !== null);
   return [
-    "| Criterion | Statement | Coverage |",
-    "| --- | --- | --- |",
-    ...rows,
+    `Proven by case \`${entry.id}\` — ${entry.description.trim()}`,
+    "",
+    renderCollapsible(
+      "Evidence, input, command & output",
+      sections.join("\n\n"),
+    ),
   ].join("\n");
 }
 
-/** Distinct covering cases for a requirement, in stable case-id order. */
-function coveringCases(
-  requirement: Requirement,
-  byRef: Map<string, RenderCase[]>,
-): RenderCase[] {
-  const seen = new Map<string, RenderCase>();
-  for (const ac of liveAcceptance(requirement)) {
-    for (const entry of byRef.get(acceptanceRef(requirement.id, ac.id)) ?? []) {
-      seen.set(entry.id, entry);
-    }
-  }
-  return [...seen.values()].sort((a, b) => a.id.localeCompare(b.id));
+/** A scenario checkpoint's evidence: the owning scenario case's identity and
+ * dependency-mode labels, plus the checkpoint's step and assertion within the
+ * scenario. */
+function renderCheckpointEvidence(resolved: ResolvedCheckpoint): string {
+  const { scenarioCase, checkpoint } = resolved;
+  const body = [
+    renderEvidenceSection(scenarioCase),
+    "",
+    `**Scenario** — \`${scenarioCase.id}\`: ${scenarioCase.description.trim()}`,
+    "",
+    `**Checkpoint \`${checkpoint.id}\`** — ${checkpoint.title.trim()}`,
+    "",
+    checkpoint.description.trim(),
+  ].join("\n");
+  return [
+    `Proven by checkpoint \`${checkpoint.id}\` of scenario \`${scenarioCase.id}\``,
+    "",
+    renderCollapsible("Scenario checkpoint evidence", body),
+  ].join("\n");
 }
 
-/** Which of this requirement's criteria a given case demonstrates. */
-function demonstratedRefs(
+/** Resolve and render one active AC's evidence block by its `verifiedBy` kind. */
+function renderAcceptanceEvidence(
+  ref: string,
+  ac: AcceptanceCriterion,
+  index: EvidenceIndex,
+): string {
+  switch (ac.verifiedBy) {
+    case "case": {
+      const entry = index.caseByRef.get(ref);
+      return entry === undefined
+        ? "_No covering case found._"
+        : renderCaseEvidence(entry);
+    }
+    case "checkpoint": {
+      const resolved = index.checkpointByRef.get(ref);
+      return resolved === undefined
+        ? "_No covering checkpoint found._"
+        : renderCheckpointEvidence(resolved);
+    }
+    case "unit":
+      return `Proven by unit test \`${ac.unitTest}\`.`;
+    case "manual":
+      return `Proven by manual checklist step \`${ac.manualStep}\` in \`${RELEASE_CHECKLIST_PATH}\`.`;
+  }
+}
+
+/** One active acceptance criterion: its compound ref, `verifiedBy` label,
+ * statement, and its own single evidence block. */
+function renderAcceptance(
   requirement: Requirement,
-  entry: RenderCase,
-): string[] {
-  const live = new Set(
-    liveAcceptance(requirement).map((ac) =>
-      acceptanceRef(requirement.id, ac.id),
-    ),
-  );
-  return entry.covers.filter((ref) => live.has(ref));
+  ac: AcceptanceCriterion,
+  index: EvidenceIndex,
+): string {
+  const ref = acceptanceRef(requirement.id, ac.id);
+  return [
+    `#### ${ref} — verified by \`${ac.verifiedBy}\` (${VERIFIED_BY_LABELS[ac.verifiedBy]})`,
+    "",
+    ac.statement.trim(),
+    "",
+    renderAcceptanceEvidence(ref, ac, index),
+  ].join("\n");
+}
+
+/** A retired acceptance criterion as a tombstone: its ref, a retired marker,
+ * the statement, and the reason — no evidence block. */
+function renderRetiredAcceptance(
+  requirement: Requirement,
+  ac: AcceptanceCriterion,
+): string {
+  return [
+    `#### ${acceptanceRef(requirement.id, ac.id)} — retired`,
+    "",
+    ac.statement.trim(),
+    "",
+    `> Retired: ${(ac.retiredReason ?? "").trim()}`,
+  ].join("\n");
+}
+
+/** A retired requirement as a tombstone: its heading, a retired marker, and the
+ * reason — no description body, no acceptance criteria, no evidence. */
+function renderRetiredRequirement(requirement: Requirement): string {
+  return [
+    `### ${requirementHeading(requirement)}`,
+    "",
+    `> Retired: ${(requirement.retiredReason ?? "").trim()}`,
+  ].join("\n");
 }
 
 function renderRequirement(
   requirement: Requirement,
-  byRef: Map<string, RenderCase[]>,
+  index: EvidenceIndex,
 ): string {
+  if (requirement.status === "retired") {
+    return renderRetiredRequirement(requirement);
+  }
+
   const blocks = [
     `### ${requirementHeading(requirement)}`,
     "",
     requirement.description.trim(),
-    "",
-    renderAcceptanceTable(requirement, byRef),
   ];
 
   if (requirement.status === "deferred" && requirement.coverage !== undefined) {
     blocks.push("", `> Deferred: ${requirement.coverage.trim()}`);
   }
 
-  for (const entry of coveringCases(requirement, byRef)) {
-    const acIds = demonstratedRefs(requirement, entry).map((ref) =>
-      ref.slice(requirement.id.length + 1),
-    );
-    const sections = [
-      renderEvidenceSection(entry),
-      renderInputSection(entry),
-      renderCommandSection(entry),
-      renderOutputSection(entry),
-      renderCliOutputSection(entry),
-    ].filter((section): section is string => section !== null);
+  for (const ac of requirement.acceptance) {
     blocks.push(
       "",
-      `#### Case: ${entry.title}`,
-      "",
-      `Description: ${entry.description.trim()}`,
-      "",
-      `Covers: ${acIds.join(", ")}`,
-      "",
-      renderCollapsible(
-        "Evidence, input, command & output",
-        sections.join("\n\n"),
-      ),
+      ac.status === "retired"
+        ? renderRetiredAcceptance(requirement, ac)
+        : renderAcceptance(requirement, ac, index),
     );
   }
 
   return blocks.join("\n");
 }
 
-/** Map every acceptance-criterion ref to the cases that cover it. */
-function indexCasesByRef(cases: RenderCase[]): Map<string, RenderCase[]> {
-  const byRef = new Map<string, RenderCase[]>();
-  for (const entry of cases) {
-    for (const ref of entry.covers) {
-      const existing = byRef.get(ref);
-      if (existing === undefined) byRef.set(ref, [entry]);
-      else existing.push(entry);
-    }
-  }
-  return byRef;
+/** Total checkpoints declared across every case. */
+function countCheckpoints(cases: RenderCase[]): number {
+  return cases.reduce((sum, entry) => sum + entry.checkpoints.length, 0);
 }
 
 /** Render the full behavior reference. Pure: same inputs always yield the same
  * Markdown, so a committed copy can be drift-checked with `--check`. */
 export function renderDocument(areas: Area[], cases: RenderCase[]): string {
-  const byRef = indexCasesByRef(cases);
+  const index = buildEvidenceIndex(cases);
 
-  const visibleAreas = areas
-    .map((area) => ({
-      ...area,
-      requirements: area.requirements.filter((r) => r.status !== "retired"),
-    }))
-    .filter((area) => area.requirements.length > 0);
+  const visibleAreas = areas.filter((area) => area.requirements.length > 0);
 
+  const isActive = (r: Requirement) => r.status !== "retired";
   const requirementCount = visibleAreas.reduce(
-    (sum, area) => sum + area.requirements.length,
+    (sum, area) => sum + area.requirements.filter(isActive).length,
     0,
   );
   const acceptanceCount = visibleAreas.reduce(
     (sum, area) =>
-      sum + area.requirements.reduce((n, r) => n + liveAcceptance(r).length, 0),
+      sum +
+      area.requirements
+        .filter(isActive)
+        .reduce((n, r) => n + liveAcceptance(r).length, 0),
     0,
   );
 
@@ -720,23 +825,25 @@ export function renderDocument(areas: Area[], cases: RenderCase[]): string {
     "",
     "Living documentation generated from the functional requirements in",
     "`packages/cli/requirements/functional/` and the end-to-end cases in",
-    "`packages/cli/test/e2e/cases/`. Every example below is the expected output",
-    "asserted by the e2e suite, so a passing gate (`bun run test:e2e` for fast",
-    "cases, `bun run test:contract` for the external-contract suite) is also",
-    "proof this document is accurate.",
+    "`packages/cli/test/e2e/cases/`. Every acceptance criterion below shows its",
+    "own single piece of evidence — a dedicated case, a named scenario",
+    "checkpoint, a named unit-test file, or a named manual checklist step — so a",
+    "passing gate (`bun run test:e2e` for fast cases, `bun run test:contract` for",
+    "the external-contract suite) is also proof this document is accurate.",
     "",
     `**${requirementCount}** requirements · **${acceptanceCount}** acceptance ` +
-      `criteria · **${cases.length}** end-to-end cases.`,
+      `criteria · **${cases.length}** end-to-end cases · ` +
+      `**${countCheckpoints(cases)}** scenario checkpoints.`,
     "",
-    "Each case declares its **dependency mode** and, per external dependency,",
-    "whether it is wired to the **Real** genuine binary, a **Simulated** declared",
-    "fake shim, or **Not exercised** (the dependency is not wired into the case —",
-    "a pure surface case, or a Worktrunk scenario modelled with raw Git so no",
-    "`wt` binary runs). Simulated evidence is never real lifecycle proof:",
-    "real-Worktrunk evidence comes only from the external-contract suite, so the",
-    "verified Worktrunk range `>=0.67.0 <0.68.0` is represented as supported",
-    "solely because that suite passes against the pinned real v0.67.0 binary",
-    "(see `WTW-FR-0012`).",
+    "Each case (and scenario checkpoint) declares its **dependency mode** and,",
+    "per external dependency, whether it is wired to the **Real** genuine binary,",
+    "a **Simulated** declared fake shim, or **Not exercised** (the dependency is",
+    "not wired into the case — a pure surface case, or a Worktrunk scenario",
+    "modelled with raw Git so no `wt` binary runs). Simulated evidence is never",
+    "real lifecycle proof: real-Worktrunk evidence comes only from the",
+    "external-contract suite, so the verified Worktrunk range `>=0.67.0 <0.68.0`",
+    "is represented as supported solely because that suite passes against the",
+    "pinned real v0.67.0 binary (see the `COMPAT` compatibility requirements).",
   ];
 
   sections.push("", "## Contents");
@@ -752,7 +859,7 @@ export function renderDocument(areas: Area[], cases: RenderCase[]): string {
   for (const area of visibleAreas) {
     sections.push("", `## ${area.title}`);
     for (const requirement of area.requirements) {
-      sections.push("", renderRequirement(requirement, byRef));
+      sections.push("", renderRequirement(requirement, index));
     }
   }
 
