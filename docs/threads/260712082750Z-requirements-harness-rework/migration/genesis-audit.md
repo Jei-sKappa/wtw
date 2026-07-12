@@ -1,0 +1,156 @@
+# Genesis migration audit
+
+This is a one-time audit (per decision-log P4) that lives in the
+requirements-harness-rework thread and is archived with it once every row is
+checked off in Task 15. Its purpose is to guarantee the manifest rewrite (Tasks
+8–10) drops no behavior guarantee: it enumerates every acceptance criterion of
+the frozen genesis spec
+(`docs/threads/260711114414Z-wtw-genesis/specs/001/spec.md`, FR-01..FR-15) as an
+unchecked row, and Tasks 8–10 fill each row's `New refs` with the new compound
+ref(s) that absorb it while Task 15 checks each `Done` box.
+
+**Baseline commit:** `e82ac6e340b6310f18e155ddf914fd4329da8a5a`
+
+This is the diff base for the Task 15 product-diff check: the product tree
+(`packages/cli/src/`, `packages/core/src/`) must be unchanged against this
+commit except for the P6 version-bump carve-out
+(`packages/core/src/worktrunk/version.ts` and the comment-only example in
+`packages/cli/src/diagnostics/categories.ts`).
+
+**Row-resolution rule:** Every row resolves in exactly one of two ways — to one
+or more new compound refs that absorb its substance, or to an explicit
+owner-approved disposition recorded in the row. Silent drops are prohibited: an
+implementer who believes a criterion should be dropped must escalate to the
+owner rather than leave the row unresolved or quietly delete it.
+
+## Genesis FR-01 — Workspace architecture and runtime
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-01.1 | A clean install recognizes a private Bun workspace with `packages/core` and `packages/cli`, and the CLI consumes core via a workspace dependency. | | [ ] |
+| AC-01.2 | Dependency-boundary tests prove `@wtw/core` imports no CLI, process-argument, subprocess, terminal-output, or filesystem-effect modules. | | [ ] |
+| AC-01.3 | Formatting/linting, strict type checking, and tests run through root aggregate scripts on the Jastr-derived toolchain. | | [ ] |
+| AC-01.4 | The bundled CLI runs under the documented Node runtime without Bun and contains no unresolved `@wtw/core` runtime import. | | [ ] |
+
+## Genesis FR-02 — CLI surface and error envelope
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-02.1 | Bare `wtw`, root/command help, `-h`, and `--help` print the corresponding help and exit 0. | | [ ] |
+| AC-02.2 | Only `init`, `sync [--open]`, `check` are accepted; every excluded command/flag and unexpected positional exits 1 with exactly one `Error: <message>` line on stderr and empty stdout. | | [ ] |
+| AC-02.3 | `init` and `check` reject every command-specific option; `sync` accepts only `--open`. | | [ ] |
+
+## Genesis FR-03 — Repository resolution and support boundary
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-03.1 | Every product command runs successfully from primary root, nested primary dir, linked root, and nested linked dir, all resolving the same primary/common Git context. | | [ ] |
+| AC-03.2 | macOS cases cover repository/worktree paths containing spaces without argument splitting or path corruption. | | [ ] |
+| AC-03.3 | A simulated Linux platform reports unverified/best-effort status without claiming suite evidence; bare repos, missing-primary contexts, Windows, and non-repository dirs produce deterministic unsupported/error findings without writes. | | [ ] |
+| AC-03.4 | Repository-shape cases independently fail each primary predicate (bare, absent main record, prunable main record, missing path, mismatched root) without writes; a post-discovery permission failure is reported as an ordinary command failure. | | [ ] |
+
+## Genesis FR-04 — Initialization preflight and idempotency
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-04.1 | Each predictable conflict enumerated by the `init` contract exits 1 and leaves the complete fixture byte-for-byte unchanged. | | [ ] |
+| AC-04.2 | On an empty supported repo, `init` creates exactly the canonical TOML, include, workspace, and managed exclude content, syncs existing linked worktrees, launches no Cursor/approval, and exits 0. | | [ ] |
+| AC-04.3 | Rerunning `init` on healthy setup exits 0, preserves user-authored bytes outside managed regions, and makes no semantic change beyond required reconciliation. | | [ ] |
+| AC-04.4 | An injected post-write filesystem failure exits 1 and reports the writes completed before failure without attempting broad deletion/rollback. | | [ ] |
+
+## Genesis FR-05 — Privacy and local exclude ownership
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-05.1 | `init` creates/reconciles one delimited local-exclude block containing all required private paths while preserving all unrelated `info/exclude` bytes. | | [ ] |
+| AC-05.2 | If any required private path is tracked, `init` performs no writes and `check` emits a `FAIL`; a successful init introduces no tracked repository file. | | [ ] |
+| AC-05.3 | Reconciliation of an existing valid managed block is idempotent and never duplicates its entries. | | [ ] |
+
+## Genesis FR-06 — Worktrunk configuration and customization
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-06.1 | A missing `.config/wt.toml` is scaffolded with exact distinct blocking-copy, post-start-sync/open, and post-remove-sync commands. | | [ ] |
+| AC-06.2 | An existing TOML with all reserved hooks is preserved byte-for-byte, including unrelated custom hooks, comments, order, and settings. | | [ ] |
+| AC-06.3 | An existing TOML missing/conflicting with a reserved hook makes `init` perform no writes and print the exact manual additions; after manual correction, rerun succeeds without rewriting it. | | [ ] |
+| AC-06.4 | `init` neither invokes nor mutates Worktrunk approval; the real contract case observes native first-use approval in isolated Worktrunk state. | | [ ] |
+
+## Genesis FR-07 — Copy policy
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-07.1 | A scaffolded `.worktreeinclude` contains the two required control paths and explanatory user-editing guidance, without guessed private-data entries. | | [ ] |
+| AC-07.2 | `check` fails when either required control entry is absent and warns (not fails) for a user entry that currently matches no existing ignored content. | | [ ] |
+| AC-07.3 | The real contract scenario proves native Worktrunk copies selected ignored data and both control files from the primary before creation readiness, including when the new branch base is a linked-worktree branch. | | [ ] |
+
+## Genesis FR-08 — Synchronization and concurrency
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-08.1 | `sync` atomically makes every linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the primary copies, overwriting divergent linked copies. | | [ ] |
+| AC-08.2 | `sync` does not create, modify, or overwrite any other user-selected `.worktreeinclude` path. | | [ ] |
+| AC-08.3 | Two overlapping sync processes serialize through one common-directory lock and finish with folders from the final Git state, with no stale older snapshot written last. | | [ ] |
+| AC-08.4 | Lock timeout exits 1 without file writes; injected errors release the lock; a library-recognized stale lock is recoverable per documented policy. | | [ ] |
+| AC-08.5 | A linked worktree made by raw Git is reported as drift, then gains canonical control files and a workspace entry after explicit sync. | | [ ] |
+
+## Genesis FR-09 — Cursor workspace preservation and reconciliation
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-09.1 | `init` creates a missing `<primary-dir-name>.code-workspace`; adopts an existing valid-JSONC top-level object preserving everything outside `folders`; fails without writes for invalid JSONC or a non-object top level. | | [ ] |
+| AC-09.2 | Sync modifies only top-level `folders` in valid JSONC and preserves comments, formatting, property order, and all unrelated properties byte-for-byte outside the edit span. | | [ ] |
+| AC-09.3 | Invalid JSONC causes sync to exit 1 without changing the workspace and causes `check` to emit a failure. | | [ ] |
+| AC-09.4 | The folder list contains the primary first and every existing linked worktree sorted by display name then normalized absolute path, using deterministic branch and detached labels. | | [ ] |
+| AC-09.5 | Missing/prunable registrations are excluded, produce check warnings with native cleanup guidance, and are not pruned by any `wtw` command. | | [ ] |
+| AC-09.6 | Plain `sync` recreates a missing workspace with the minimal scaffold and current folders; `sync --open` may open it after the successful write; `check` reports the file missing before repair. | | [ ] |
+
+## Genesis FR-10 — Cursor launch behavior
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-10.1 | `init`, `check`, and plain `sync` never invoke Cursor. | | [ ] |
+| AC-10.2 | `sync --open` invokes the fake Cursor exactly once with the exact absolute root workspace path and only after successful writes. | | [ ] |
+| AC-10.3 | A simulated Cursor launch failure after writes preserves the synchronized files and exits 1 with the launch error. | | [ ] |
+| AC-10.4 | The manual release check records successful open/focus behavior with a supported real Cursor; automated suites never launch the GUI. | | [ ] |
+
+## Genesis FR-11 — Diagnostics
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-11.1 | A healthy fixture prints every stable category in order, contains only pass findings, prints deterministic counts, performs no writes or Cursor call, and exits 0. | | [ ] |
+| AC-11.2 | A warning-only fixture exits 0; each defined failure fixture exits 1; both print aggregate counts matching emitted findings. | | [ ] |
+| AC-11.3 | A fixture with an unavailable prerequisite marks dependent checks skipped and does not emit misleading cascaded failures. | | [ ] |
+| AC-11.4 | A filesystem before/after snapshot proves `check` never changes repository, Worktrunk, approval, lock, or Cursor state. | | [ ] |
+
+## Genesis FR-12 — Worktrunk compatibility
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-12.1 | Parsed `0.62.0` and later `0.62.x` fixtures pass the compatibility finding; below `0.62.0` fails; `0.63.0` and later warn but do not fail; unparseable output fails. (Range shifts to `>=0.67.0 <0.68.0` under P6.) | | [ ] |
+| AC-12.2 | The external-contract suite uses a real v0.62.0 binary and passes before the verified range is represented as supported in the living document. (Pin moves to v0.67.0 under P6.) | | [ ] |
+
+## Genesis FR-13 — Lifecycle integration
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-13.1 | The real Worktrunk scenario proves selected ignored content exists before a successful create command returns, while the fake Cursor records the post-start exact workspace open invocation. | | [ ] |
+| AC-13.2 | Removing from a linked worktree through real Worktrunk leaves the root workspace without the removed path after the background hook completes. | | [ ] |
+| AC-13.3 | Fast cases demonstrate repair after simulated background failure, `--no-hooks`, and raw Git drift through explicit `check` and `sync`. | | [ ] |
+
+## Genesis FR-14 — Living behavior document
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-14.1 | Strict schema tests reject invalid requirement/case manifests, unknown fields, unsafe fixture paths, invalid coverage references, and active acceptance criteria with no E2E case. | | [ ] |
+| AC-14.2 | The behavior generator deterministically renders requirements, criteria, fixtures, commands, dependency modes, exact streams, exit codes, and output files; `--check` fails on any byte drift and writes nothing. | | [ ] |
+| AC-14.3 | Every active observable criterion in FR-02..FR-13 has an E2E case mapping, and the living document visibly distinguishes real and simulated Git, Worktrunk, and Cursor evidence. | | [ ] |
+| AC-14.4 | The full test-and-report command runs formatting/linting, typechecking, package tests, fast E2E, real external contract, behavior-doc drift, and build, and exits nonzero when any stage fails. | | [ ] |
+
+## Genesis FR-15 — Version, build, and local use
+
+| Genesis AC | Substance | New refs | Done |
+| --- | --- | --- | --- |
+| AC-15.1 | Source-run `--version` and `-V` print exactly the CLI package version followed by ` (dev)` and exit 0. | | [ ] |
+| AC-15.2 | A build test injects a known short SHA and the resulting bundle prints exactly `<package-version> (<known-sha>)`; building with no resolvable Git SHA fails clearly. | | [ ] |
+| AC-15.3 | The bundle has a Node shebang, is self-contained, and runs with the supported Node runtime without Bun. | | [ ] |
+| AC-15.4 | Following the documented symlink procedure makes `wtw` available through `PATH`; a rebuild changes its reported embedded SHA without reinstall; removing the symlink removes the command. | | [ ] |
