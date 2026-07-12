@@ -6,7 +6,10 @@ a GUI. A small number of behaviors can only be confirmed by a human against a
 real, supported Cursor install. Perform these manual checks before cutting a
 release and record the outcome (date, Cursor version, OS) in the release notes.
 
-## FR-10 — Cursor launch (manual evidence for spec AC-10.4)
+Each step below is an addressable manual-evidence target: an acceptance
+criterion marked `verifiedBy: manual` names the step id in its heading.
+
+## `cursor-open-focus` — Real Cursor opens and focuses the workspace
 
 `sync --open` must actually open and focus the correct workspace in a supported
 real Cursor. The automated cases prove the exact argument and ordering against

@@ -1,44 +1,112 @@
-- id: WTW-FR-0009
-  title: Cursor workspace preservation and reconciliation
+- id: WORK-FR-0001
+  title: Workspace creation and adoption at init
   status: active
   description: >
     The root Cursor workspace file (`<primary-directory-name>.code-workspace`)
     is user-editable JSONC that lives only in the primary worktree and is never
     selected by `.worktreeinclude`. `wtw` owns only its top-level `folders`
-    property. Synchronization edits only `folders` in valid JSONC, preserving
-    comments, formatting, property order, and every unrelated property; invalid
-    JSONC or a non-object top level fails without writing; and a missing
-    workspace is recreated with the minimal scaffold and the current folders.
-    This file is authoritative for FR-09; the `init`-side criteria (creation,
-    folder-list ordering, and missing/prunable exclusion) are added by Task 12.
+    property. `wtw init` creates the file when absent and adopts an existing
+    valid-JSONC top-level object, preserving everything outside `folders`;
+    unparseable JSONC or a non-object top level is a preflight conflict.
   acceptance:
-    - id: AC-0901
+    - id: AC-0001
       statement: >
-        `init` creates a missing `<primary-directory-name>.code-workspace`;
-        adopts an existing valid-JSONC top-level object while preserving
-        everything outside `folders`; and fails without writes for invalid JSONC
-        or a non-object top level. (spec AC-09.1)
-    - id: AC-0902
+        `wtw init` creates a missing `<primary-directory-name>.code-workspace`.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        Synchronization modifies only top-level `folders` in valid JSONC and
-        preserves comments, formatting, property order, and all unrelated
-        properties byte-for-byte outside the edit span. (spec AC-09.2)
-    - id: AC-0903
+        `wtw init` adopts an existing valid-JSONC top-level object while
+        preserving everything outside `folders`.
+      verifiedBy: case
+    - id: AC-0003
       statement: >
-        Invalid JSONC (or a non-object top level) causes sync to exit 1 without
-        changing the workspace file. (spec AC-09.3)
-    - id: AC-0904
+        `wtw init` fails without writes when the workspace is invalid JSONC or
+        has a non-object top level.
+      verifiedBy: case
+
+- id: WORK-FR-0002
+  title: Surgical folders edit on sync
+  status: active
+  description: >
+    Synchronization edits only the top-level `folders` property in valid JSONC.
+    Comments, formatting, property order, and every unrelated property are
+    preserved byte-for-byte outside the edited span.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        Synchronization modifies only top-level `folders` and preserves
+        comments, formatting, property order, and all unrelated properties
+        byte-for-byte outside the edit span.
+      verifiedBy: case
+
+- id: WORK-FR-0003
+  title: Invalid-JSONC guard
+  status: active
+  description: >
+    A workspace file that is not valid JSONC, or whose top level is not an
+    object, cannot be edited surgically. Synchronization refuses to write it and
+    `wtw check` reports it as a failure.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        Invalid JSONC or a non-object top level causes sync to exit 1 without
+        changing the workspace file.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        `wtw check` reports a failure for a workspace file that is invalid
+        JSONC.
+      verifiedBy: case
+
+- id: WORK-FR-0004
+  title: Deterministic folder-list reconciliation
+  status: active
+  description: >
+    The reconciled `folders` list is deterministic: the primary worktree comes
+    first, then every existing linked worktree sorted by display name and then
+    by normalized absolute path, using deterministic branch and detached labels.
+  acceptance:
+    - id: AC-0001
       statement: >
         The reconciled folder list contains the primary first and every existing
         linked worktree sorted by display name and then normalized absolute
-        path, using deterministic branch and detached labels. (spec AC-09.4)
-    - id: AC-0905
+        path, using deterministic branch and detached labels.
+      verifiedBy: case
+
+- id: WORK-FR-0005
+  title: Missing and prunable registrations
+  status: active
+  description: >
+    A worktree registration whose path is missing or prunable is excluded from
+    the reconciled folder list. `wtw` never prunes such registrations itself;
+    `wtw check` warns about them and points at the native Worktrunk cleanup.
+  acceptance:
+    - id: AC-0001
       statement: >
-        Missing/prunable registrations are excluded from the reconciled folder
-        list and are not pruned by any `wtw` command. The complementary `check`
-        WARNING with native cleanup guidance is proven by `wtw check` (Task 13).
-        (spec AC-09.5)
-    - id: AC-0906
+        Missing or prunable registrations are excluded from the reconciled
+        folder list and are not pruned by any `wtw` command.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        Plain `sync` recreates a missing workspace with the minimal scaffold and
-        the current managed folders. (spec AC-09.6)
+        `wtw check` warns for a missing or prunable registration and gives
+        native cleanup guidance.
+      verifiedBy: case
+
+- id: WORK-FR-0006
+  title: Recreating a missing workspace on sync
+  status: active
+  description: >
+    If the workspace file has gone missing, `wtw check` reports it as missing
+    and a plain `wtw sync` recreates it from the minimal scaffold populated with
+    the current managed folders, so the file is restored without requiring
+    `wtw init`.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        Plain `wtw sync` recreates a missing workspace with the minimal scaffold
+        and the current managed folders.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        `wtw check` reports the root workspace file as missing before repair.
+      verifiedBy: case

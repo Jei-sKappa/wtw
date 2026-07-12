@@ -1,27 +1,38 @@
-- id: WTW-FR-0007
-  title: Copy policy
+- id: COPY-FR-0001
+  title: Scaffolding the copy policy
   status: active
   description: >
-    When `.worktreeinclude` is absent, `init` scaffolds a documented copy policy
-    carrying exactly the two required control entries (`.config/wt.toml`,
-    `.worktreeinclude`) plus user-editing guidance, with no guessed private-data
-    entries — the user owns and edits the copy policy. This file is authoritative
-    for FR-07; the `check`-side entry findings (AC-07.2) are added by Task 13 and
-    the real-contract native-copy proof (AC-07.3) by Task 15.
+    When `.worktreeinclude` is absent, `wtw init` scaffolds a documented copy
+    policy that the user owns and edits. The scaffold carries exactly the two
+    required control entries (`.config/wt.toml` and `.worktreeinclude`) plus
+    user-editing guidance, and guesses no private-data entries of its own. The
+    complementary native copy of selected ignored data by real Worktrunk at
+    pre-start is a contract-layer assumption owned by the worktrunk-assumptions
+    domain.
   acceptance:
-    - id: AC-0701
+    - id: AC-0001
       statement: >
         A scaffolded `.worktreeinclude` contains the two required control paths
         and explanatory user-editing guidance, without guessed private-data
-        entries. (spec AC-07.1)
-    - id: AC-0702
+        entries.
+      verifiedBy: case
+
+- id: COPY-FR-0002
+  title: Copy-policy diagnostics
+  status: active
+  description: >
+    `wtw check` reports on the copy policy. A missing required control entry is
+    a failure because it breaks the wtw contract; a user-authored entry that
+    currently matches no ignored content is a warning, not a failure, because it
+    may match content the user has yet to create.
+  acceptance:
+    - id: AC-0001
       statement: >
-        `wtw check` FAILs when either required control entry is absent from
-        `.worktreeinclude`, and WARNs (rather than FAILs) for a user entry that
-        currently matches no ignored content. (spec AC-07.2)
-    - id: AC-0703
+        `wtw check` fails when either required control entry is absent from
+        `.worktreeinclude`.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        The real-contract scenario proves native Worktrunk copies selected
-        ignored data and both control files from the primary before creation
-        readiness, including when the new branch base is a linked-worktree branch
-        whose ignored content diverges from the primary. (spec AC-07.3)
+        `wtw check` warns, rather than fails, for a user entry that currently
+        matches no ignored content.
+      verifiedBy: case

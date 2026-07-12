@@ -1,21 +1,29 @@
-- id: WTW-FR-0012
-  title: Worktrunk compatibility
+- id: COMPAT-FR-0001
+  title: Worktrunk version evaluation
   status: active
   description: >
     The verified Worktrunk range is `>=0.67.0 <0.68.0`. `wtw check` resolves the
-    Worktrunk version (`wt --version`, read-only) and evaluates it: a version in
-    range passes; a version below `0.67.0` and an unparseable/absent version
-    fail; `0.68.0` and newer warn as unverified but are not blocked.
+    Worktrunk version read-only through `wt --version` and evaluates it: a
+    version in range passes, a version below the minimum fails, a version at or
+    above the next minor warns as unverified without blocking, and output that
+    cannot be parsed fails. The complementary proof that a real Worktrunk binary
+    reports its version as expected is a contract-layer assumption owned by the
+    worktrunk-assumptions domain.
   acceptance:
-    - id: AC-1201
+    - id: AC-0001
       statement: >
-        Parsed versions `0.67.0` and a later `0.67.x` pass the compatibility
-        finding; a version below `0.67.0` fails; `0.68.0` and a later version
-        warn but do not fail; unparseable output fails. (spec AC-12.1)
-    - id: AC-1202
+        A version at `0.67.0` or a later `0.67.x` passes the compatibility
+        finding.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        The external-contract suite runs the built `wtw` against a pinned real
-        Worktrunk v0.67.0 binary and passes: `wtw check` resolves the real
-        `wt --version` output (`wt v0.67.0`) and PASSes the Worktrunk
-        compatibility finding, backing the verified range before it is
-        represented as supported in the living document. (spec AC-12.2)
+        A version below `0.67.0` fails the compatibility finding.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        A version at `0.68.0` or later warns as unverified without failing.
+      verifiedBy: case
+    - id: AC-0004
+      statement: >
+        Unparseable Worktrunk version output fails the compatibility finding.
+      verifiedBy: case

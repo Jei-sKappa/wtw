@@ -1,40 +1,66 @@
-- id: WTW-FR-0010
-  title: Cursor launch behavior
+- id: CURSOR-FR-0001
+  title: Commands that never launch Cursor
   status: active
   description: >
-    Plain `sync` never opens Cursor. `sync --open` launches `cursor` with the
-    exact absolute primary-worktree workspace path exactly once, strictly after
-    every synchronization write has succeeded. If the launch fails after those
-    writes, the synchronized state remains in place (no rollback) and the command
-    exits 1 with the launch error. Direct synchronization blocks until the writes
-    and any launch attempt complete before the command returns. `init` and
-    `check` never invoke Cursor. Automated suites drive a fake `cursor` shim that
-    only records the workspace path it was asked to open and never spawns a GUI.
-  notes: >
-    AC-10.1's `plain sync never invokes Cursor` portion is proven now by the
-    `sync-open-plain-no-invoke` case. Its `init`/`check` portions are not yet
-    E2E-provable: `wtw init` and `wtw check` are stubs (they throw
-    `not_implemented` before any effect) until Tasks 12 and 13 give them real
-    bodies; those tasks add the init/check no-invoke assertions to their own
-    cases, so no active acceptance criterion here is left uncovered by an
-    existing case. AC-10.4 (spec) is a manual-only criterion: a supported real
-    Cursor opening/focusing the named workspace can only be observed by a human,
-    never by the hermetic fast suite (which must never launch a GUI). Following
-    the FR-15 precedent for criteria unreachable from the fast harness, AC-10.4
-    is not declared as an automated acceptance criterion; its evidence is the
-    manual step recorded in `packages/cli/docs/RELEASE-CHECKLIST.md`.
+    Only `sync --open` may launch Cursor. `wtw init`, `wtw check`, and a plain
+    `wtw sync` never invoke the editor. Automated suites drive a fake `cursor`
+    shim that records the workspace path it is asked to open and never spawns a
+    GUI, so a never-launched command leaves the invocation log empty.
   acceptance:
-    - id: AC-1001
+    - id: AC-0001
       statement: >
-        Plain `sync` (no `--open`) never invokes Cursor: the fake-Cursor
-        invocation log stays empty. (spec AC-10.1; `init`/`check` no-invoke
-        assertions are added by Tasks 12/13.)
-    - id: AC-1002
+        Plain `wtw sync` leaves the fake-Cursor invocation log empty.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        `wtw init` leaves the fake-Cursor invocation log empty.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        `wtw check` leaves the fake-Cursor invocation log empty.
+      verifiedBy: case
+
+- id: CURSOR-FR-0002
+  title: Launch on sync --open
+  status: active
+  description: >
+    `sync --open` launches `cursor` with the exact absolute primary-worktree
+    workspace path exactly once, strictly after every synchronization write has
+    succeeded. Direct synchronization blocks until the writes and the launch
+    attempt complete before the command returns.
+  acceptance:
+    - id: AC-0001
       statement: >
         `sync --open` invokes the fake Cursor exactly once with the exact
         absolute root workspace path, only after the synchronization writes
-        succeed. (spec AC-10.2)
-    - id: AC-1003
+        succeed.
+      verifiedBy: case
+
+- id: CURSOR-FR-0003
+  title: Launch failure after writes
+  status: active
+  description: >
+    A launch attempt happens only after synchronization writes have succeeded,
+    so a failed launch never rolls the writes back. The command surfaces the
+    launch error and exits 1 while leaving the synchronized state in place.
+  acceptance:
+    - id: AC-0001
       statement: >
         A simulated Cursor launch failure after the writes preserves the
-        synchronized files and exits 1 with the launch error. (spec AC-10.3)
+        synchronized files and exits 1 with the launch error.
+      verifiedBy: case
+
+- id: CURSOR-FR-0004
+  title: Real Cursor open and focus
+  status: active
+  description: >
+    The hermetic suites can only prove the exact argument and ordering against
+    the fake shim. Whether a supported real Cursor actually opens and focuses
+    the workspace can be observed only by a human, so it is proven by a manual
+    release check rather than an automated case.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A supported real Cursor opens and focuses the named root workspace.
+      verifiedBy: manual
+      manualStep: cursor-open-focus

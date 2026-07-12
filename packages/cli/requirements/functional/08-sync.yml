@@ -1,39 +1,87 @@
-- id: WTW-FR-0008
-  title: Synchronization and concurrency
+- id: SYNC-FR-0001
+  title: Control-file propagation
   status: active
   description: >
     `wtw sync` resolves the primary worktree from any supported invocation
-    location, acquires ONE repository-wide cross-process lock under the Git
-    common directory, and — while holding it — atomically makes every linked
-    worktree's control files (`.config/wt.toml`, `.worktreeinclude`)
-    byte-identical to the authoritative primary copies, re-enumerates the live
-    Git worktrees, and reconciles the workspace. It copies no other
-    `.worktreeinclude`-selected path. Acquisition waits a documented short
-    timeout, uses the locking library's stale-lock policy with a documented
-    threshold, writes nothing on a timeout, and always releases the lock on both
-    success and error paths.
+    location and, while holding the repository-wide lock, atomically makes every
+    linked worktree's control files (`.config/wt.toml`, `.worktreeinclude`)
+    byte-identical to the authoritative primary copies. The primary copies are
+    authoritative: divergent linked copies are overwritten.
   acceptance:
-    - id: AC-0801
+    - id: AC-0001
       statement: >
-        `sync` atomically makes every linked `.config/wt.toml` and
+        `wtw sync` atomically makes every linked `.config/wt.toml` and
         `.worktreeinclude` byte-identical to the primary copies, overwriting
-        divergent linked control copies. (spec AC-08.1)
-    - id: AC-0802
+        divergent linked control copies.
+      verifiedBy: case
+
+- id: SYNC-FR-0002
+  title: Copy scope limited to control files
+  status: active
+  description: >
+    Synchronization propagates only the two control files. It never applies the
+    user's `.worktreeinclude` copy policy itself, so no other user-selected path
+    is created, modified, or overwritten by `wtw sync`.
+  acceptance:
+    - id: AC-0001
       statement: >
-        `sync` does not create, modify, or overwrite any other user-selected
-        `.worktreeinclude` path. (spec AC-08.2)
-    - id: AC-0803
+        `wtw sync` does not create, modify, or overwrite any other user-selected
+        `.worktreeinclude` path.
+      verifiedBy: case
+
+- id: SYNC-FR-0003
+  title: Concurrency serialization
+  status: active
+  description: >
+    A single repository-wide cross-process lock under the Git common directory
+    serializes overlapping synchronizations. After serialization the workspace
+    reflects the final Git state, never an older snapshot written last by a
+    process that lost the race.
+  acceptance:
+    - id: AC-0001
       statement: >
         Two deliberately overlapping sync processes serialize through one
         common-directory lock and finish with folders derived from the final Git
-        state, with no stale older snapshot written last. (spec AC-08.3)
-    - id: AC-0804
+        state, with no stale older snapshot written last.
+      verifiedBy: case
+
+- id: SYNC-FR-0004
+  title: Lock lifecycle and recovery
+  status: active
+  description: >
+    Lock acquisition waits a documented short timeout and, on expiry, writes
+    nothing. The lock is always released on both success and error paths, and a
+    lock the locking library recognizes as stale is recoverable under the
+    library's documented stale-lock threshold.
+  acceptance:
+    - id: AC-0001
       statement: >
-        Lock timeout exits 1 without file writes; an injected error still
-        releases the lock; and a library-recognized stale lock is recoverable
-        according to the documented policy. (spec AC-08.4)
-    - id: AC-0805
+        A lock-acquisition timeout exits 1 without any file writes.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        A linked worktree made by raw Git gains canonical control files and a
-        workspace entry after an explicit `sync`. The complementary drift REPORT
-        is proven by `wtw check` (Task 13). (spec AC-08.5)
+        An injected error during synchronization still releases the lock.
+      verifiedBy: case
+    - id: AC-0003
+      statement: >
+        A library-recognized stale lock is recoverable according to the
+        documented policy.
+      verifiedBy: case
+
+- id: SYNC-FR-0005
+  title: Repair of raw-Git drift
+  status: active
+  description: >
+    A linked worktree created by raw `git worktree add` bypasses the Worktrunk
+    hooks, so it starts without canonical control files or a workspace entry.
+    `wtw check` reports this as drift, and an explicit `wtw sync` repairs it.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        `wtw check` reports a linked worktree created by raw Git as drift.
+      verifiedBy: case
+    - id: AC-0002
+      statement: >
+        After an explicit `wtw sync`, a linked worktree created by raw Git gains
+        canonical control files and a workspace entry.
+      verifiedBy: case

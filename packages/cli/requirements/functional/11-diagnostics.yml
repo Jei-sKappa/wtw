@@ -1,33 +1,62 @@
-- id: WTW-FR-0011
-  title: Diagnostics
+- id: CHECK-FR-0001
+  title: Healthy aggregate report
   status: active
   description: >
-    `wtw check` is a READ-ONLY aggregate diagnostic. It acquires no lock, opens
-    no Cursor, and reports findings under the seven stable categories in order —
-    Repository, Dependencies, Privacy, Worktrunk, Copy policy, Synchronization,
-    Cursor workspace — with `PASS`/`WARN`/`FAIL` severities (and `SKIPPED` for a
-    dependent check a missing prerequisite made unrunnable). It ends with
-    deterministic severity counts, exits 0 when no failure exists (warnings
-    included), and exits 1 when any failure exists. When a prerequisite is
-    unavailable it marks dependent checks skipped instead of emitting cascading
-    false failures, and it never changes repository, Worktrunk, approval, lock,
-    or Cursor state.
+    `wtw check` is a read-only aggregate diagnostic. It reports findings under
+    the seven stable categories in order — Repository, Dependencies, Privacy,
+    Worktrunk, Copy policy, Synchronization, Cursor workspace — and ends with
+    deterministic severity counts. A fully healthy repository yields only pass
+    findings and exit 0.
   acceptance:
-    - id: AC-1101
+    - id: AC-0001
       statement: >
         A healthy fixture prints every stable category in order, contains only
-        pass findings, prints deterministic counts, performs no writes or Cursor
-        call, and exits 0. (spec AC-11.1)
-    - id: AC-1102
+        pass findings, prints deterministic counts, and exits 0.
+      verifiedBy: case
+
+- id: CHECK-FR-0002
+  title: Severity-driven exit code
+  status: active
+  description: >
+    The exit code follows the highest severity present: warnings alone still
+    exit 0, while any failure exits 1. Both cases print aggregate counts that
+    match the emitted findings.
+  acceptance:
+    - id: AC-0001
       statement: >
-        A warning-only fixture exits 0; each defined failure fixture exits 1;
-        both print aggregate counts matching the emitted findings. (spec
-        AC-11.2)
-    - id: AC-1103
+        A warning-only fixture exits 0 and prints aggregate counts matching the
+        emitted findings.
+      verifiedBy: case
+    - id: AC-0002
       statement: >
-        A fixture with an unavailable prerequisite marks dependent checks skipped
-        and does not emit misleading cascaded failures. (spec AC-11.3)
-    - id: AC-1104
+        A failure fixture exits 1 and prints aggregate counts matching the
+        emitted findings.
+      verifiedBy: case
+
+- id: CHECK-FR-0003
+  title: Skipped dependent checks
+  status: active
+  description: >
+    When a prerequisite is unavailable, dependent checks are marked skipped
+    rather than emitting cascading false failures, so an unavailable
+    prerequisite does not manufacture misleading downstream failures.
+  acceptance:
+    - id: AC-0001
       statement: >
-        A before/after snapshot proves `check` never changes repository,
-        Worktrunk, approval, lock, or Cursor state. (spec AC-11.4)
+        A fixture with an unavailable prerequisite marks dependent checks
+        skipped and does not emit misleading cascaded failures.
+      verifiedBy: case
+
+- id: CHECK-FR-0004
+  title: Read-only guarantee
+  status: active
+  description: >
+    `wtw check` acquires no lock, opens no Cursor, and mutates no state. It
+    never changes repository, Worktrunk, approval, lock, or Cursor state, which
+    a before/after snapshot proves.
+  acceptance:
+    - id: AC-0001
+      statement: >
+        A before/after snapshot proves `wtw check` never changes repository,
+        Worktrunk, approval, lock, or Cursor state.
+      verifiedBy: case

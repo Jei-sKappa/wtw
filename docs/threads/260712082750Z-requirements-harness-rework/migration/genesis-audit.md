@@ -79,55 +79,55 @@ owner rather than leave the row unresolved or quietly delete it.
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-07.1 | A scaffolded `.worktreeinclude` contains the two required control paths and explanatory user-editing guidance, without guessed private-data entries. | | [ ] |
-| AC-07.2 | `check` fails when either required control entry is absent and warns (not fails) for a user entry that currently matches no existing ignored content. | | [ ] |
-| AC-07.3 | The real contract scenario proves native Worktrunk copies selected ignored data and both control files from the primary before creation readiness, including when the new branch base is a linked-worktree branch. | | [ ] |
+| AC-07.1 | A scaffolded `.worktreeinclude` contains the two required control paths and explanatory user-editing guidance, without guessed private-data entries. | COPY-FR-0001.AC-0001 | [ ] |
+| AC-07.2 | `check` fails when either required control entry is absent and warns (not fails) for a user entry that currently matches no existing ignored content. | COPY-FR-0002.AC-0001 (missing control fails), COPY-FR-0002.AC-0002 (unmatched entry warns) | [ ] |
+| AC-07.3 | The real contract scenario proves native Worktrunk copies selected ignored data and both control files from the primary before creation readiness, including when the new branch base is a linked-worktree branch. | Native pre-start copy is a real-Worktrunk assumption deferred to the WTA worktrunk-assumptions domain (see FR-13 assumption rows, Task 10) | [ ] |
 
 ## Genesis FR-08 — Synchronization and concurrency
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-08.1 | `sync` atomically makes every linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the primary copies, overwriting divergent linked copies. | | [ ] |
-| AC-08.2 | `sync` does not create, modify, or overwrite any other user-selected `.worktreeinclude` path. | | [ ] |
-| AC-08.3 | Two overlapping sync processes serialize through one common-directory lock and finish with folders from the final Git state, with no stale older snapshot written last. | | [ ] |
-| AC-08.4 | Lock timeout exits 1 without file writes; injected errors release the lock; a library-recognized stale lock is recoverable per documented policy. | | [ ] |
-| AC-08.5 | A linked worktree made by raw Git is reported as drift, then gains canonical control files and a workspace entry after explicit sync. | | [ ] |
+| AC-08.1 | `sync` atomically makes every linked `.config/wt.toml` and `.worktreeinclude` byte-identical to the primary copies, overwriting divergent linked copies. | SYNC-FR-0001.AC-0001 | [ ] |
+| AC-08.2 | `sync` does not create, modify, or overwrite any other user-selected `.worktreeinclude` path. | SYNC-FR-0002.AC-0001 | [ ] |
+| AC-08.3 | Two overlapping sync processes serialize through one common-directory lock and finish with folders from the final Git state, with no stale older snapshot written last. | SYNC-FR-0003.AC-0001 | [ ] |
+| AC-08.4 | Lock timeout exits 1 without file writes; injected errors release the lock; a library-recognized stale lock is recoverable per documented policy. | SYNC-FR-0004.AC-0001 (timeout no writes), SYNC-FR-0004.AC-0002 (error releases lock), SYNC-FR-0004.AC-0003 (stale-lock recovery) | [ ] |
+| AC-08.5 | A linked worktree made by raw Git is reported as drift, then gains canonical control files and a workspace entry after explicit sync. | SYNC-FR-0005.AC-0001 (check reports drift), SYNC-FR-0005.AC-0002 (sync repairs) | [ ] |
 
 ## Genesis FR-09 — Cursor workspace preservation and reconciliation
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-09.1 | `init` creates a missing `<primary-dir-name>.code-workspace`; adopts an existing valid-JSONC top-level object preserving everything outside `folders`; fails without writes for invalid JSONC or a non-object top level. | | [ ] |
-| AC-09.2 | Sync modifies only top-level `folders` in valid JSONC and preserves comments, formatting, property order, and all unrelated properties byte-for-byte outside the edit span. | | [ ] |
-| AC-09.3 | Invalid JSONC causes sync to exit 1 without changing the workspace and causes `check` to emit a failure. | | [ ] |
-| AC-09.4 | The folder list contains the primary first and every existing linked worktree sorted by display name then normalized absolute path, using deterministic branch and detached labels. | | [ ] |
-| AC-09.5 | Missing/prunable registrations are excluded, produce check warnings with native cleanup guidance, and are not pruned by any `wtw` command. | | [ ] |
-| AC-09.6 | Plain `sync` recreates a missing workspace with the minimal scaffold and current folders; `sync --open` may open it after the successful write; `check` reports the file missing before repair. | | [ ] |
+| AC-09.1 | `init` creates a missing `<primary-dir-name>.code-workspace`; adopts an existing valid-JSONC top-level object preserving everything outside `folders`; fails without writes for invalid JSONC or a non-object top level. | WORK-FR-0001.AC-0001 (creates missing), WORK-FR-0001.AC-0002 (adopts valid object), WORK-FR-0001.AC-0003 (fails without writes) | [ ] |
+| AC-09.2 | Sync modifies only top-level `folders` in valid JSONC and preserves comments, formatting, property order, and all unrelated properties byte-for-byte outside the edit span. | WORK-FR-0002.AC-0001 | [ ] |
+| AC-09.3 | Invalid JSONC causes sync to exit 1 without changing the workspace and causes `check` to emit a failure. | WORK-FR-0003.AC-0001 (sync exit 1, no change), WORK-FR-0003.AC-0002 (check failure) | [ ] |
+| AC-09.4 | The folder list contains the primary first and every existing linked worktree sorted by display name then normalized absolute path, using deterministic branch and detached labels. | WORK-FR-0004.AC-0001 | [ ] |
+| AC-09.5 | Missing/prunable registrations are excluded, produce check warnings with native cleanup guidance, and are not pruned by any `wtw` command. | WORK-FR-0005.AC-0001 (excluded and not pruned), WORK-FR-0005.AC-0002 (check warns with cleanup guidance) | [ ] |
+| AC-09.6 | Plain `sync` recreates a missing workspace with the minimal scaffold and current folders; `sync --open` may open it after the successful write; `check` reports the file missing before repair. | WORK-FR-0006.AC-0001 (recreate on plain sync), WORK-FR-0006.AC-0002 (check reports missing); open-after-write absorbed by CURSOR-FR-0002.AC-0001 | [ ] |
 
 ## Genesis FR-10 — Cursor launch behavior
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-10.1 | `init`, `check`, and plain `sync` never invoke Cursor. | | [ ] |
-| AC-10.2 | `sync --open` invokes the fake Cursor exactly once with the exact absolute root workspace path and only after successful writes. | | [ ] |
-| AC-10.3 | A simulated Cursor launch failure after writes preserves the synchronized files and exits 1 with the launch error. | | [ ] |
-| AC-10.4 | The manual release check records successful open/focus behavior with a supported real Cursor; automated suites never launch the GUI. | | [ ] |
+| AC-10.1 | `init`, `check`, and plain `sync` never invoke Cursor. | CURSOR-FR-0001.AC-0001 (plain sync), CURSOR-FR-0001.AC-0002 (init), CURSOR-FR-0001.AC-0003 (check) | [ ] |
+| AC-10.2 | `sync --open` invokes the fake Cursor exactly once with the exact absolute root workspace path and only after successful writes. | CURSOR-FR-0002.AC-0001 | [ ] |
+| AC-10.3 | A simulated Cursor launch failure after writes preserves the synchronized files and exits 1 with the launch error. | CURSOR-FR-0003.AC-0001 | [ ] |
+| AC-10.4 | The manual release check records successful open/focus behavior with a supported real Cursor; automated suites never launch the GUI. | CURSOR-FR-0004.AC-0001 (manual, step `cursor-open-focus`) | [ ] |
 
 ## Genesis FR-11 — Diagnostics
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-11.1 | A healthy fixture prints every stable category in order, contains only pass findings, prints deterministic counts, performs no writes or Cursor call, and exits 0. | | [ ] |
-| AC-11.2 | A warning-only fixture exits 0; each defined failure fixture exits 1; both print aggregate counts matching emitted findings. | | [ ] |
-| AC-11.3 | A fixture with an unavailable prerequisite marks dependent checks skipped and does not emit misleading cascaded failures. | | [ ] |
-| AC-11.4 | A filesystem before/after snapshot proves `check` never changes repository, Worktrunk, approval, lock, or Cursor state. | | [ ] |
+| AC-11.1 | A healthy fixture prints every stable category in order, contains only pass findings, prints deterministic counts, performs no writes or Cursor call, and exits 0. | CHECK-FR-0001.AC-0001 (ordered pass report + counts + exit 0); no-write/no-Cursor clause absorbed by CHECK-FR-0004.AC-0001 and CURSOR-FR-0001.AC-0003 | [ ] |
+| AC-11.2 | A warning-only fixture exits 0; each defined failure fixture exits 1; both print aggregate counts matching emitted findings. | CHECK-FR-0002.AC-0001 (warning-only exits 0), CHECK-FR-0002.AC-0002 (failure exits 1) | [ ] |
+| AC-11.3 | A fixture with an unavailable prerequisite marks dependent checks skipped and does not emit misleading cascaded failures. | CHECK-FR-0003.AC-0001 | [ ] |
+| AC-11.4 | A filesystem before/after snapshot proves `check` never changes repository, Worktrunk, approval, lock, or Cursor state. | CHECK-FR-0004.AC-0001 | [ ] |
 
 ## Genesis FR-12 — Worktrunk compatibility
 
 | Genesis AC | Substance | New refs | Done |
 | --- | --- | --- | --- |
-| AC-12.1 | Parsed `0.62.0` and later `0.62.x` fixtures pass the compatibility finding; below `0.62.0` fails; `0.63.0` and later warn but do not fail; unparseable output fails. (Range shifts to `>=0.67.0 <0.68.0` under P6.) | | [ ] |
-| AC-12.2 | The external-contract suite uses a real v0.62.0 binary and passes before the verified range is represented as supported in the living document. (Pin moves to v0.67.0 under P6.) | | [ ] |
+| AC-12.1 | Parsed `0.62.0` and later `0.62.x` fixtures pass the compatibility finding; below `0.62.0` fails; `0.63.0` and later warn but do not fail; unparseable output fails. (Range shifts to `>=0.67.0 <0.68.0` under P6.) | COMPAT-FR-0001.AC-0001 (in-range passes), COMPAT-FR-0001.AC-0002 (below fails), COMPAT-FR-0001.AC-0003 (next-minor warns), COMPAT-FR-0001.AC-0004 (unparseable fails) | [ ] |
+| AC-12.2 | The external-contract suite uses a real v0.62.0 binary and passes before the verified range is represented as supported in the living document. (Pin moves to v0.67.0 under P6.) | Real-binary version-reporting proof is a real-Worktrunk assumption deferred to the WTA worktrunk-assumptions domain as a contract-mode case (see FR-13 assumption rows, Task 10) | [ ] |
 
 ## Genesis FR-13 — Lifecycle integration
 
